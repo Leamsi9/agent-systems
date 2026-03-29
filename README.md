@@ -34,6 +34,14 @@ Canonical upstream repo:
 - `scripts/workstream.py`
   Canonical live-workstream audit and status-ledger sync script.
 
+## Standalone Quick Start
+
+The public package repo ships a small example `docs/` skeleton so you can
+validate the package in isolation:
+
+- `python3 scripts/check_gated_plan.py docs/plans/feature/example-workstream.plan.toml --phase acceptance`
+- `python3 scripts/workstream.py sync-index --confirm`
+
 ## Vendoring
 
 To vendor this package into another repo:
