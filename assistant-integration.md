@@ -44,8 +44,12 @@ The package installer can vendor the package, create the config file, and
 scaffold the docs skeleton for a repo:
 
 ```bash
-python3 agent-protocols/scripts/install.py
+cd /path/to/target-repo
+python3 /path/to/external/agent-protocols/scripts/install.py
 ```
+
+Use an external checkout of `agent-protocols`, not a nested clone inside the
+target repo.
 
 Default behavior:
 
@@ -56,32 +60,35 @@ Default behavior:
 For automation:
 
 ```bash
-python3 agent-protocols/scripts/install.py --yes
+cd /path/to/target-repo
+python3 /path/to/external/agent-protocols/scripts/install.py --yes
 ```
 
 To keep the install strictly single-repo:
 
 ```bash
-python3 agent-protocols/scripts/install.py --yes --skip-workspace-discovery
+cd /path/to/target-repo
+python3 /path/to/external/agent-protocols/scripts/install.py --yes --skip-workspace-discovery
 ```
 
 For linked repos that should resolve relative to the git common root instead of
 the config file location:
 
 ```bash
-python3 agent-protocols/scripts/install.py --target . --repo-id my-repo --linked-repo workspace@git_common_root=../workspace
+cd /path/to/orchestrator-repo
+python3 /path/to/external/agent-protocols/scripts/install.py --target . --repo-id my-repo --linked-repo workspace@git_common_root=../workspace
 ```
 
 To print short assistant pointer snippets after scaffolding:
 
 ```bash
-python3 agent-protocols/scripts/install.py --yes --print-assistant-snippets
+python3 /path/to/external/agent-protocols/scripts/install.py --yes --print-assistant-snippets
 ```
 
 To print a rendered copy-paste adoption prompt for a coding assistant:
 
 ```bash
-python3 agent-protocols/scripts/install.py --yes --print-adoption-prompt
+python3 /path/to/external/agent-protocols/scripts/install.py --yes --print-adoption-prompt
 ```
 
 ## Upstreaming Rule
@@ -95,10 +102,12 @@ In multi-repo workspaces, treat one repo as the orchestration root for
 cross-repo workstreams and live status.
 
 - That root repo should list sibling repos in `agent-protocols.toml`.
+- Run the installer from that root repo when setting up cross-repo authority.
 - That root repo should keep coordinated multi-repo plan families under
   `docs/plans/cross-repo/`.
 - Sibling repos that are also worked on independently should vendor their own
   `agent-protocols/` copy too.
+- Those sibling local installs should normally use `--skip-workspace-discovery`.
 - Local plans should stay in each repo's default `docs/plans/` taxonomy.
 - Those sibling local copies do not clash with the orchestration copy unless
   multiple repos start acting as cross-repo authorities at the same time.

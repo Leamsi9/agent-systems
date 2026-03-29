@@ -14,6 +14,81 @@ Canonical upstream repo:
 
 - `https://github.com/Leamsi9/agent-protocols`
 
+## Adoption Quick Start
+
+Use an external checkout of `agent-protocols` to vendor the package into a
+target repo.
+
+Do not clone `agent-protocols` inside the target repo. That leaves a nested git
+repo in `agent-protocols/`, which is not the intended vendored shape.
+
+Clone the package somewhere outside the target repo once:
+
+```bash
+git clone git@github.com:Leamsi9/agent-protocols.git ~/src/agent-protocols
+```
+
+Then run the installer from the repo you want to adopt:
+
+Single repo or standalone sibling repo:
+
+```bash
+cd /path/to/target-repo
+python3 ~/src/agent-protocols/scripts/install.py --yes --skip-workspace-discovery
+```
+
+Orchestration repo with sibling repos:
+
+```bash
+cd /path/to/orchestrator-repo
+python3 ~/src/agent-protocols/scripts/install.py
+```
+
+For non-interactive orchestration installs that should include discovered
+sibling repos:
+
+```bash
+cd /path/to/orchestrator-repo
+python3 ~/src/agent-protocols/scripts/install.py --yes --include-discovered-repos
+```
+
+Best-practice defaults:
+
+- keep one external checkout such as `~/src/agent-protocols`
+- `cd` into the repo you want to scaffold before running the installer
+- use the orchestration repo for cross-repo installs
+- use `--skip-workspace-discovery` when adopting the package into a sibling repo
+  that should stay standalone
+- review the detected plan in interactive mode before accepting it
+
+After the installer runs:
+
+1. review `agent-protocols.toml`
+2. review or refresh repo docs that point to the protocol
+3. use `--print-adoption-prompt` if you want a coding assistant to finish the
+   repo-specific wiring
+
+The installer copies the package into the target repo as `agent-protocols/`.
+The external clone is only the source used for vendoring.
+
+## Quick Start Patterns
+
+Use the pattern that matches how the repo is worked on:
+
+- Single repo:
+  Run the installer inside that repo with `--skip-workspace-discovery`.
+- Multi-repo workspace:
+  Run the installer inside the chosen orchestration repo first, then let it
+  discover or include sibling repos.
+- Standalone sibling in a larger workspace:
+  Run the installer inside that sibling repo with
+  `--skip-workspace-discovery` so it keeps a local-only config.
+
+If you later decide a standalone repo should become part of a cross-repo
+orchestration setup, rerun the installer in the orchestration repo or update
+`agent-protocols.toml` there. Do not create a second cross-repo authority in a
+different repo.
+
 ## Package Files
 
 - `README.md`

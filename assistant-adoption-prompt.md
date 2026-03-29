@@ -14,8 +14,15 @@ Requirements:
    test conventions.
 2. Vendor or refresh `{{VENDOR_DIR}}/` from the canonical package if needed.
    - If `{{VENDOR_DIR}}/scripts/install.py` is available, prefer using it.
-   - If you are already inside the target repo, you can run it without
-     `--target` so it detects the repo root automatically.
+   - Prefer running the installer from an external package checkout or from an
+     already-vendored package copy.
+   - If you are already inside the target repo, run it there without `--target`
+     so it detects the repo root automatically.
+   - If this repo is the cross-repo orchestration root, run the installer from
+     this repo and keep the linked sibling repos here.
+   - If this repo is only being adopted for standalone local work, prefer
+     `--skip-workspace-discovery`.
+   - Do not leave a nested git clone of `{{VENDOR_DIR}}/` inside the target repo.
 3. Create or update `{{CONFIG_FILE}}` for this repo.
    - Primary repo id: `{{REPO_ID}}`
    - Primary branch: `{{MAIN_BRANCH}}`

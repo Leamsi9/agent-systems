@@ -405,6 +405,11 @@ def build_install_plan(args: argparse.Namespace) -> InstallPlan:
 def copy_package(source_root: Path, target_root: Path, vendor_dir: str) -> Path:
     vendor_root = (target_root / vendor_dir).resolve()
     if vendor_root == source_root.resolve():
+        if (source_root / ".git").exists():
+            raise RuntimeError(
+                "detected an agent-protocols git checkout inside the target repo; "
+                "clone the package outside the target repo and rerun the installer"
+            )
         return vendor_root
 
     vendor_root.mkdir(parents=True, exist_ok=True)
@@ -426,7 +431,12 @@ def copy_package(source_root: Path, target_root: Path, vendor_dir: str) -> Path:
     for relative in VENDORED_DIRS:
         source = source_root / relative
         destination = vendor_root / relative
-        shutil.copytree(source, destination, dirs_exist_ok=True)
+        shutil.copytree(
+            source,
+            destination,
+            dirs_exist_ok=True,
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+        )
 
     return vendor_root
 
@@ -735,16 +745,19 @@ def main() -> int:
     args = parse_args()
     try:
         plan = build_install_plan(args)
+        scaffold(
+            target=plan.target,
+            repo_id=plan.repo_id,
+            main_branch=plan.main_branch,
+            linked_repos=list(plan.linked_repos),
+            vendor_dir=args.vendor_dir,
+        )
     except EOFError:
         print("install aborted: input stream closed", file=sys.stderr)
         return 2
-    scaffold(
-        target=plan.target,
-        repo_id=plan.repo_id,
-        main_branch=plan.main_branch,
-        linked_repos=list(plan.linked_repos),
-        vendor_dir=args.vendor_dir,
-    )
+    except RuntimeError as error:
+        print(f"install aborted: {error}", file=sys.stderr)
+        return 2
     print(f"scaffolded agent-protocols integration in {plan.target}")
     if args.print_assistant_snippets:
         print()
