@@ -13,10 +13,15 @@ Requirements:
 1. Inspect the repo first and respect its existing structure, docs style, and
    test conventions.
 2. Vendor or refresh `{{VENDOR_DIR}}/` from the canonical package if needed.
+   - If `{{VENDOR_DIR}}/scripts/install.py` is available, prefer using it.
+   - If you are already inside the target repo, you can run it without
+     `--target` so it detects the repo root automatically.
 3. Create or update `{{CONFIG_FILE}}` for this repo.
    - Primary repo id: `{{REPO_ID}}`
    - Primary branch: `{{MAIN_BRANCH}}`
    - If linked repos are obvious from local context, record them.
+   - If this repo is the cross-repo orchestration root, linked repos should be
+     included here.
    - If linked repos are ambiguous, do not invent them; leave the config rooted
      to the main repo only and call out the gap.
 4. Point live instruction surfaces such as `AGENTS.md`, `CLAUDE.md`, or the
@@ -41,6 +46,7 @@ Requirements:
 9. Summarize:
    - what changed
    - what was verified
+   - whether this repo is the orchestration root or a standalone sibling repo
    - any linked repos or assistant entrypoints that still need human input
 
 Keep the repo-specific overlay thin. If you discover a generic improvement to

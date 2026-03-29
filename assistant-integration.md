@@ -41,10 +41,28 @@ Repo topology and linked repos are declared in `agent-protocols.toml`.
 ## Bootstrap Help
 
 The package installer can vendor the package, create the config file, and
-scaffold the docs skeleton for a new repo:
+scaffold the docs skeleton for a repo:
 
 ```bash
-python3 agent-protocols/scripts/install.py --target . --repo-id my-repo
+python3 agent-protocols/scripts/install.py
+```
+
+Default behavior:
+
+- detect the current repo root when run inside a git repo
+- discover sibling repos in the surrounding workspace
+- ask for confirmation before writing
+
+For automation:
+
+```bash
+python3 agent-protocols/scripts/install.py --yes
+```
+
+To keep the install strictly single-repo:
+
+```bash
+python3 agent-protocols/scripts/install.py --yes --skip-workspace-discovery
 ```
 
 For linked repos that should resolve relative to the git common root instead of
@@ -57,16 +75,27 @@ python3 agent-protocols/scripts/install.py --target . --repo-id my-repo --linked
 To print short assistant pointer snippets after scaffolding:
 
 ```bash
-python3 agent-protocols/scripts/install.py --target . --repo-id my-repo --print-assistant-snippets
+python3 agent-protocols/scripts/install.py --yes --print-assistant-snippets
 ```
 
 To print a rendered copy-paste adoption prompt for a coding assistant:
 
 ```bash
-python3 agent-protocols/scripts/install.py --target . --repo-id my-repo --print-adoption-prompt
+python3 agent-protocols/scripts/install.py --yes --print-adoption-prompt
 ```
 
 ## Upstreaming Rule
 
 If a change to the vendored package is generic, upstream it to the package repo
 instead of keeping it as a permanent consumer-only fork.
+
+## Multi-Repo Guidance
+
+In multi-repo workspaces, treat one repo as the orchestration root for
+cross-repo workstreams and live status.
+
+- That root repo should list sibling repos in `agent-protocols.toml`.
+- Sibling repos that are also worked on independently should vendor their own
+  `agent-protocols/` copy too.
+- Cross-repo plans should live in one place, not be duplicated across sibling
+  repos.

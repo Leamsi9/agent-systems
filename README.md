@@ -52,11 +52,26 @@ validate the package in isolation:
 - `python3 scripts/check_gated_plan.py docs/plans/feature/example-workstream.plan.toml --phase acceptance`
 - `python3 scripts/workstream.py sync-index --confirm`
 
-To vendor the package into a fresh repo and scaffold the repo-local layout:
+To vendor the package into a repo and scaffold the repo-local layout:
 
+- `python3 agent-protocols/scripts/install.py`
+- `python3 agent-protocols/scripts/install.py --yes`
+- `python3 agent-protocols/scripts/install.py --yes --skip-workspace-discovery`
+- `python3 agent-protocols/scripts/install.py --yes --include-discovered-repos`
 - `python3 scripts/install.py --target /path/to/repo --repo-id my-repo`
 - `python3 scripts/install.py --target /path/to/repo --repo-id my-repo --linked-repo workspace@git_common_root=../workspace`
 - `python3 scripts/install.py --target /path/to/repo --repo-id my-repo --print-adoption-prompt`
+
+Installer behavior:
+
+- When run inside a git repo, the installer defaults to that repo root.
+- In interactive mode, it proposes the detected repo plus discovered sibling
+  repos in the surrounding workspace and asks for confirmation.
+- If you reject the detected plan, it prompts for the repo path, repo id,
+  branch, and linked repo entries.
+- Use `--yes` for automation.
+- Use `--skip-workspace-discovery` when you want a strictly single-repo
+  install.
 
 ## Vendoring
 
@@ -74,7 +89,7 @@ To vendor this package into another repo:
 6. Run the canonical scripts directly:
    - `python3 agent-protocols/scripts/check_gated_plan.py path/to/work.plan.toml --phase phase_name`
    - `python3 agent-protocols/scripts/workstream.py sync-index --confirm`
-   - `python3 agent-protocols/scripts/install.py --target . --repo-id my-repo`
+   - `python3 agent-protocols/scripts/install.py`
 
 See also:
 
@@ -107,4 +122,26 @@ normally keep:
 - `docs/live-workstream-status.md`
   Script-owned current-state ledger.
 
-The goal is one reusable canonical package and no duplicate authorities.
+## Recommended Topologies
+
+Use one of these shapes, depending on how the codebase is actually worked on:
+
+- Single repo:
+  Vendor `agent-protocols/` in that repo and keep `agent-protocols.toml`
+  rooted to `.`.
+- Workspace anchor repo:
+  Pick one primary repo to own integrated cross-repo plans and the shared live
+  ledger, then list sibling repos in `agent-protocols.toml`.
+- Standalone sibling repo:
+  If a sibling repo is also worked on independently, vendor its own
+  `agent-protocols/` copy there too, with a repo-local config and ledger.
+
+Recommended rule:
+
+- Cross-repo workstreams should have one orchestration root.
+- Repos that are regularly opened on their own should also carry their own
+  local package instance.
+- Generic improvements made in any consumer repo should be upstreamed here.
+
+The goal is one reusable canonical package and no duplicate authorities inside
+each consuming repo.

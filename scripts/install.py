@@ -4,7 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
+import subprocess
+import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -29,6 +33,16 @@ VENDORED_DIRS = [
 ]
 
 
+@dataclass(frozen=True)
+class InstallPlan:
+    target: Path
+    repo_id: str
+    main_branch: str
+    linked_repos: tuple[tuple[str, str, str], ...]
+    discovered_repos: tuple[tuple[str, str, str], ...] = ()
+    target_source: str = "explicit"
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Scaffold repo-local agent-protocols config and docs."
@@ -36,12 +50,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--target",
         type=Path,
-        default=Path("."),
-        help="Target repo root to scaffold.",
+        help=(
+            "Target repo root to scaffold. Defaults to the git repo containing "
+            "the current working directory, falling back to the cwd."
+        ),
     )
     parser.add_argument(
         "--repo-id",
-        help="Primary repo id. Defaults to the target directory name.",
+        help="Primary repo id. Defaults to the detected target repo name.",
     )
     parser.add_argument(
         "--main-branch",
@@ -58,6 +74,27 @@ def parse_args() -> argparse.Namespace:
             "Use ID=PATH for config-root-relative repos or "
             "ID@git_common_root=PATH for worktree-aware sibling repos."
         ),
+    )
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help=(
+            "Accept the inferred install plan without prompting. "
+            "Also includes discovered workspace repos unless disabled."
+        ),
+    )
+    parser.add_argument(
+        "--include-discovered-repos",
+        action="store_true",
+        help=(
+            "Include auto-discovered sibling git repos in non-interactive mode. "
+            "Interactive mode includes them by default after confirmation."
+        ),
+    )
+    parser.add_argument(
+        "--skip-workspace-discovery",
+        action="store_true",
+        help="Do not scan the surrounding workspace for sibling git repos.",
     )
     parser.add_argument(
         "--print-assistant-snippets",
@@ -109,6 +146,260 @@ def write_if_missing(path: Path, content: str) -> None:
 
 def package_root() -> Path:
     return Path(__file__).resolve().parent.parent
+
+
+def run_command(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(args, cwd=cwd, capture_output=True, text=True)
+
+
+def existing_probe_path(path: Path) -> Path:
+    candidate = path.expanduser().resolve()
+    if candidate.exists() and candidate.is_file():
+        candidate = candidate.parent
+    while not candidate.exists():
+        if candidate == candidate.parent:
+            return Path.cwd().resolve()
+        candidate = candidate.parent
+    return candidate
+
+
+def find_git_repo_root(path: Path) -> Path | None:
+    probe = existing_probe_path(path)
+    result = run_command(["git", "rev-parse", "--show-toplevel"], probe)
+    if result.returncode != 0:
+        return None
+    stdout = result.stdout.strip()
+    if not stdout:
+        return None
+    return Path(stdout).resolve()
+
+
+def resolve_git_common_root(path: Path) -> Path | None:
+    repo_root = find_git_repo_root(path)
+    if repo_root is None:
+        return None
+    result = run_command(["git", "rev-parse", "--git-common-dir"], repo_root)
+    if result.returncode != 0:
+        return None
+    common_dir = result.stdout.strip()
+    if not common_dir:
+        return None
+    common_path = Path(common_dir)
+    if not common_path.is_absolute():
+        common_path = (repo_root / common_path).resolve()
+    return common_path.parent
+
+
+def guess_repo_id(path: Path) -> str:
+    common_root = resolve_git_common_root(path)
+    if common_root is not None:
+        return common_root.name
+    repo_root = find_git_repo_root(path)
+    if repo_root is not None:
+        return repo_root.name
+    return path.name
+
+
+def resolve_target_path(raw_target: Path | None) -> tuple[Path, str]:
+    if raw_target is None:
+        cwd = Path.cwd().resolve()
+        repo_root = find_git_repo_root(cwd)
+        if repo_root is not None:
+            return repo_root, "detected from current git repo"
+        return cwd, "current working directory"
+
+    target = raw_target.expanduser().resolve()
+    repo_root = find_git_repo_root(target)
+    if repo_root is not None and (target == repo_root or repo_root in target.parents):
+        return repo_root, "normalized to explicit target git repo"
+    return target, "explicit target"
+
+
+def relative_path(from_root: Path, to_root: Path) -> str:
+    return Path(os.path.relpath(to_root, from_root)).as_posix()
+
+
+def dedupe_linked_repos(
+    linked_repos: list[tuple[str, str, str]],
+) -> list[tuple[str, str, str]]:
+    deduped: list[tuple[str, str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for candidate in linked_repos:
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        deduped.append(candidate)
+    return deduped
+
+
+def discover_workspace_repos(
+    target: Path,
+    vendor_dir: str,
+) -> list[tuple[str, str, str]]:
+    common_root = resolve_git_common_root(target) or find_git_repo_root(target)
+    if common_root is None:
+        return []
+    workspace_root = common_root.parent
+    if not workspace_root.exists():
+        return []
+
+    discovered: list[tuple[str, str, str]] = []
+    try:
+        children = sorted(workspace_root.iterdir(), key=lambda path: path.name)
+    except OSError:
+        return []
+
+    for child in children:
+        try:
+            is_dir = child.is_dir()
+        except OSError:
+            continue
+        if not is_dir:
+            continue
+        if child.name.startswith("."):
+            continue
+        if child.resolve() == common_root.resolve():
+            continue
+        if child.name == vendor_dir:
+            continue
+        repo_root = find_git_repo_root(child)
+        if repo_root is None or repo_root != child.resolve():
+            continue
+        discovered.append(
+            (
+                guess_repo_id(repo_root),
+                relative_path(common_root, repo_root),
+                "git_common_root",
+            )
+        )
+    return dedupe_linked_repos(discovered)
+
+
+def render_linked_repo(spec: tuple[str, str, str]) -> str:
+    repo_id, repo_path, path_base = spec
+    token = repo_id if path_base == "config_root" else f"{repo_id}@{path_base}"
+    return f"{token}={repo_path}"
+
+
+def render_linked_repo_list(linked_repos: list[tuple[str, str, str]]) -> str:
+    return ", ".join(render_linked_repo(spec) for spec in linked_repos)
+
+
+def parse_linked_repo_list(raw_specs: str) -> list[tuple[str, str, str]]:
+    specs: list[tuple[str, str, str]] = []
+    if not raw_specs.strip():
+        return specs
+    for raw_spec in raw_specs.split(","):
+        stripped = raw_spec.strip()
+        if not stripped:
+            continue
+        specs.append(parse_linked_repo(stripped))
+    return specs
+
+
+def prompt_yes_no(prompt: str, *, default: bool) -> bool:
+    suffix = "[Y/n]" if default else "[y/N]"
+    while True:
+        answer = input(f"{prompt} {suffix} ").strip().lower()
+        if not answer:
+            return default
+        if answer in {"y", "yes"}:
+            return True
+        if answer in {"n", "no"}:
+            return False
+        print("Please answer yes or no.")
+
+
+def prompt_text(prompt: str, *, default: str) -> str:
+    answer = input(f"{prompt} [{default}] ").strip()
+    return answer or default
+
+
+def summarize_plan(plan: InstallPlan) -> None:
+    print("Detected install plan:\n")
+    print(f"- target repo: {plan.target}")
+    print(f"- target source: {plan.target_source}")
+    print(f"- primary repo id: {plan.repo_id}")
+    print(f"- main branch: {plan.main_branch}")
+    if plan.linked_repos:
+        print("- linked repos:")
+        for repo_id, repo_path, path_base in plan.linked_repos:
+            print(f"  - {repo_id}: path={repo_path}, path_base={path_base}")
+    else:
+        print("- linked repos: none")
+    if plan.discovered_repos:
+        print("- workspace discovery: sibling repos were auto-detected")
+    print()
+
+
+def interactive_mode_enabled(args: argparse.Namespace) -> bool:
+    return not args.yes and sys.stdin.isatty() and sys.stdout.isatty()
+
+
+def build_install_plan(args: argparse.Namespace) -> InstallPlan:
+    target, target_source = resolve_target_path(args.target)
+    explicit_linked = [parse_linked_repo(spec) for spec in args.linked_repo]
+    discovered = (
+        []
+        if args.skip_workspace_discovery
+        else discover_workspace_repos(target=target, vendor_dir=args.vendor_dir)
+    )
+
+    if interactive_mode_enabled(args):
+        default_plan = InstallPlan(
+            target=target,
+            repo_id=args.repo_id or guess_repo_id(target),
+            main_branch=args.main_branch,
+            linked_repos=tuple(dedupe_linked_repos(explicit_linked + discovered)),
+            discovered_repos=tuple(discovered),
+            target_source=target_source,
+        )
+        summarize_plan(default_plan)
+        if prompt_yes_no("Use this installation plan?", default=True):
+            return default_plan
+
+        custom_target = Path(
+            prompt_text("Target repo path", default=str(default_plan.target))
+        )
+        resolved_target, resolved_source = resolve_target_path(custom_target)
+        custom_repo_id = prompt_text(
+            "Primary repo id",
+            default=args.repo_id or guess_repo_id(resolved_target),
+        )
+        custom_branch = prompt_text("Main branch", default=args.main_branch)
+        custom_discovered = (
+            []
+            if args.skip_workspace_discovery
+            else discover_workspace_repos(
+                target=resolved_target,
+                vendor_dir=args.vendor_dir,
+            )
+        )
+        default_specs = dedupe_linked_repos(explicit_linked + custom_discovered)
+        custom_specs = prompt_text(
+            "Linked repos (comma-separated ID=PATH or ID@git_common_root=PATH)",
+            default=render_linked_repo_list(default_specs),
+        )
+        return InstallPlan(
+            target=resolved_target,
+            repo_id=custom_repo_id,
+            main_branch=custom_branch,
+            linked_repos=tuple(parse_linked_repo_list(custom_specs)),
+            discovered_repos=tuple(custom_discovered),
+            target_source=resolved_source,
+        )
+
+    linked_repos = list(explicit_linked)
+    if args.yes or args.include_discovered_repos:
+        linked_repos.extend(discovered)
+    return InstallPlan(
+        target=target,
+        repo_id=args.repo_id or guess_repo_id(target),
+        main_branch=args.main_branch,
+        linked_repos=tuple(dedupe_linked_repos(linked_repos)),
+        discovered_repos=tuple(discovered),
+        target_source=target_source,
+    )
 
 
 def copy_package(source_root: Path, target_root: Path, vendor_dir: str) -> Path:
@@ -397,25 +688,27 @@ def print_adoption_prompt(repo_id: str, main_branch: str, vendor_dir: str) -> No
 
 def main() -> int:
     args = parse_args()
-    target = args.target.resolve()
-    repo_id = args.repo_id or target.name
-    linked_repos = [parse_linked_repo(spec) for spec in args.linked_repo]
+    try:
+        plan = build_install_plan(args)
+    except EOFError:
+        print("install aborted: input stream closed", file=sys.stderr)
+        return 2
     scaffold(
-        target=target,
-        repo_id=repo_id,
-        main_branch=args.main_branch,
-        linked_repos=linked_repos,
+        target=plan.target,
+        repo_id=plan.repo_id,
+        main_branch=plan.main_branch,
+        linked_repos=list(plan.linked_repos),
         vendor_dir=args.vendor_dir,
     )
-    print(f"scaffolded agent-protocols integration in {target}")
+    print(f"scaffolded agent-protocols integration in {plan.target}")
     if args.print_assistant_snippets:
         print()
         print_assistant_snippets()
     if args.print_adoption_prompt:
         print()
         print_adoption_prompt(
-            repo_id=repo_id,
-            main_branch=args.main_branch,
+            repo_id=plan.repo_id,
+            main_branch=plan.main_branch,
             vendor_dir=args.vendor_dir,
         )
     return 0
