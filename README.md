@@ -1,5 +1,7 @@
 # Agent Systems
 
+Experimental package version: `0.0.1`
+
 This package is a reusable, repo-agnostic protocol kit for agent-driven
 planning, proposal capture, phase gates, and live workstream auditing.
 
@@ -21,6 +23,8 @@ Canonical upstream repo:
 - `SYNCING.md`
   Recommended strategies for propagating upstream improvements into vendored
   instances.
+- `assistant-integration.md`
+  Guidance for wiring repo instruction surfaces back to the package.
 - `substantive-work-protocol.md`
   Canonical workflow for non-trivial implementation work.
 - `proposal-protocol.md`
@@ -33,6 +37,9 @@ Canonical upstream repo:
   Canonical phase-checker implementation.
 - `scripts/workstream.py`
   Canonical live-workstream audit and status-ledger sync script.
+- `scripts/install.py`
+  Bootstrap installer that vendors the package and scaffolds repo-local config
+  and docs.
 
 ## Standalone Quick Start
 
@@ -42,20 +49,42 @@ validate the package in isolation:
 - `python3 scripts/check_gated_plan.py docs/plans/feature/example-workstream.plan.toml --phase acceptance`
 - `python3 scripts/workstream.py sync-index --confirm`
 
+To vendor the package into a fresh repo and scaffold the repo-local layout:
+
+- `python3 scripts/install.py --target /path/to/repo --repo-id my-repo`
+- `python3 scripts/install.py --target /path/to/repo --repo-id my-repo --linked-repo workspace@git_common_root=../workspace`
+
 ## Vendoring
 
 To vendor this package into another repo:
 
 1. Copy this package into the repo root as `agent-systems/`.
-2. Point maintainer docs such as `AGENTS.md` or `CLAUDE.md` to
+2. Generate or maintain a repo-local `agent-systems.toml` that declares the
+   owning repo and any linked repos.
+3. Point maintainer docs such as `AGENTS.md` or `CLAUDE.md` to
    `agent-systems/substantive-work-protocol.md`.
-3. Add a short `docs/plans/README.md` landing page plus a
+4. Add a short `docs/plans/README.md` landing page plus a
    `docs/plans/plans-index.md` inventory.
-4. Keep live generated status in a repo-local ledger such as
+5. Keep live generated status in a repo-local ledger such as
    `docs/live-workstream-status.md`.
-5. Run the canonical scripts directly:
+6. Run the canonical scripts directly:
    - `python3 agent-systems/scripts/check_gated_plan.py path/to/work.plan.toml --phase phase_name`
    - `python3 agent-systems/scripts/workstream.py sync-index --confirm`
+   - `python3 agent-systems/scripts/install.py --target . --repo-id my-repo`
+
+See also:
+
+- `examples/repo-config.example.toml`
+- `assistant-integration.md`
+
+## Compatibility Surface
+
+Treat the package path layout and canonical filenames as part of the package
+interface.
+
+- additive protocols, examples, or scripts are the safe default
+- moved or renamed canonical files should ship with an explicit migration note
+- consumer repos should update active references before pruning historical docs
 
 ## Recommended Repo-Local Shape
 

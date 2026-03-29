@@ -14,6 +14,19 @@ Recommended flow:
 3. keep a `VERSION` file inside the vendored copy
 4. update consumers by copying a tagged release or by pulling a subtree update
 
+The package is intentionally staying on `0.0.x` until the config contract and
+Leam adoption are proven stable.
+
+## Compatibility Contract
+
+Treat the package directory structure and canonical filenames as a compatibility
+surface.
+
+- adding new protocols, examples, or scripts is normally safe
+- moving or renaming canonical files is a breaking change for consumers
+- while the package is still on `0.0.x`, avoid layout churn unless the gain is
+  clear and the migration notes are ready
+
 ## Good Import Options
 
 - `git subtree`
@@ -35,3 +48,13 @@ Each consumer should document:
 
 Keep reusable protocol content in the package. Keep repo-specific landing
 pages, ledgers, ADRs, and proposal logs in the consuming repo.
+
+## Upstream First For Generic Changes
+
+If a consumer repo discovers a generic improvement:
+
+1. implement and validate it locally
+2. open a branch or PR against `Leamsi9/agent-systems`
+3. then sync the resulting upstream package change back into consumers
+
+Do not let long-lived consumer-only package forks become the default workflow.

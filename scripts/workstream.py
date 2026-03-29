@@ -17,7 +17,8 @@ from typing import Any
 
 GENERATED_START = "<!-- BEGIN GENERATED WORKSTREAM STATE -->"
 GENERATED_END = "<!-- END GENERATED WORKSTREAM STATE -->"
-STATUS_LEDGER_PATH = Path("docs/live-workstream-status.md")
+DEFAULT_STATUS_LEDGER_PATH = Path("docs/live-workstream-status.md")
+DEFAULT_CONFIG_PATH = Path("agent-systems.toml")
 HISTORICAL_PREFIXES = ("backup/", "recovery/", "audit/", "hotfix/", "safety/")
 HISTORICAL_NAMES = {"staging"}
 STATUS_PATTERN = re.compile(r"^- Status:\s*(.+?)\s*$", re.MULTILINE)
@@ -26,7 +27,6 @@ GENERATED_TIMESTAMP_PATTERN = re.compile(
     r"_Last generated: .*?_\n\n",
     re.MULTILINE,
 )
-IGNORED_DIRTY_PATHS = {STATUS_LEDGER_PATH.as_posix()}
 
 
 @dataclass(frozen=True)
@@ -34,6 +34,15 @@ class RepoConfig:
     repo_id: str
     root: Path
     main_branch: str = "main"
+    ignored_dirty_paths: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class WorkstreamSettings:
+    root: Path
+    ledger_path: Path
+    repos: tuple[RepoConfig, ...]
+    config_path: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -48,12 +57,26 @@ class ManifestRecord:
 
 def default_root() -> Path:
     package_root = Path(__file__).resolve().parent.parent
-    if (package_root / STATUS_LEDGER_PATH).exists():
+    if (package_root / DEFAULT_STATUS_LEDGER_PATH).exists():
         return package_root
     return package_root.parent
 
 
+def normalize_dirty_path(raw_path: str) -> str:
+    normalized = Path(raw_path).as_posix()
+    if normalized.startswith("./"):
+        return normalized[2:]
+    return normalized
+
+
 def guess_repo_id(path: Path) -> str:
+    common_root = resolve_git_common_root(path)
+    if common_root is not None:
+        return common_root.name
+    return path.name
+
+
+def resolve_git_common_root(path: Path) -> Path | None:
     result = run_command(["git", "rev-parse", "--git-common-dir"], path)
     if result.returncode == 0:
         common_dir = result.stdout.strip()
@@ -61,8 +84,8 @@ def guess_repo_id(path: Path) -> str:
             common_path = Path(common_dir)
             if not common_path.is_absolute():
                 common_path = (path / common_path).resolve()
-            return common_path.parent.name
-    return path.name
+            return common_path.parent
+    return None
 
 
 def parse_args() -> argparse.Namespace:
@@ -71,14 +94,14 @@ def parse_args() -> argparse.Namespace:
         "--root",
         type=Path,
         default=default_root(),
-        help="Repo root that owns docs/live-workstream-status.md and plan manifests.",
+        help="Repo root that owns plan manifests and the configured live status ledger.",
     )
     parser.add_argument(
         "--repo",
         action="append",
         default=[],
         metavar="ID=PATH",
-        help="Additional repo roots to audit. Defaults to the root repo only.",
+        help="Additional repo roots to audit. Overrides repo topology from agent-systems.toml when provided.",
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -92,7 +115,7 @@ def parse_args() -> argparse.Namespace:
 
     sync_parser = subparsers.add_parser(
         "sync-index",
-        help="Refresh the generated current-state section in docs/live-workstream-status.md.",
+        help="Refresh the generated current-state section in the configured live workstream ledger.",
     )
     sync_mode = sync_parser.add_mutually_exclusive_group()
     sync_mode.add_argument(
@@ -103,7 +126,7 @@ def parse_args() -> argparse.Namespace:
     sync_mode.add_argument(
         "--confirm",
         action="store_true",
-        help="Write the generated section back to docs/live-workstream-status.md.",
+        help="Write the generated section back to the configured live workstream ledger.",
     )
 
     return parser.parse_args()
@@ -120,18 +143,160 @@ def require_ok(result: subprocess.CompletedProcess[str], description: str) -> st
     return result.stdout
 
 
-def parse_repo_specs(root: Path, raw_specs: list[str]) -> list[RepoConfig]:
+def resolve_repo_config_path(root: Path) -> Path | None:
+    config_path = root / DEFAULT_CONFIG_PATH
+    if config_path.exists():
+        return config_path
+    return None
+
+
+def load_config_data(root: Path) -> tuple[Path | None, dict[str, Any]]:
+    config_path = resolve_repo_config_path(root)
+    if config_path is None:
+        return None, {}
+    with config_path.open("rb") as handle:
+        data = tomllib.load(handle)
+    version = data.get("version", 1)
+    if version != 1:
+        raise ValueError(f"unsupported agent-systems config version: {version}")
+    return config_path, data
+
+
+def parse_status_ledger_path(root: Path, data: dict[str, Any]) -> Path:
+    raw_path = str(data.get("status_ledger_path", DEFAULT_STATUS_LEDGER_PATH))
+    target = Path(raw_path)
+    if target.is_absolute():
+        return target.resolve()
+    return (root / target).resolve()
+
+
+def repo_ignored_dirty_paths(
+    root: Path,
+    repo_root: Path,
+    ledger_path: Path,
+    raw_paths: list[Any] | tuple[Any, ...] | None,
+) -> tuple[str, ...]:
+    ignored: list[str] = []
+    if repo_root == root:
+        ignored.append(normalize_dirty_path(ledger_path.relative_to(root).as_posix()))
+    for raw_path in raw_paths or []:
+        ignored.append(normalize_dirty_path(str(raw_path)))
+    deduped: list[str] = []
+    for candidate in ignored:
+        if candidate not in deduped:
+            deduped.append(candidate)
+    return tuple(deduped)
+
+
+def build_repo_config(
+    root: Path,
+    repo_id: str,
+    repo_path: str,
+    main_branch: str,
+    ledger_path: Path,
+    path_base: str = "config_root",
+    ignored_dirty_paths: list[Any] | tuple[Any, ...] | None = None,
+) -> RepoConfig:
+    if path_base == "config_root":
+        base_root = root
+    elif path_base == "git_common_root":
+        common_root = resolve_git_common_root(root)
+        if common_root is None:
+            raise ValueError("git_common_root path_base requires a git repo root")
+        base_root = common_root
+    else:
+        raise ValueError(f"unsupported path_base '{path_base}'")
+    resolved_root = (base_root / Path(repo_path)).resolve()
+    return RepoConfig(
+        repo_id=repo_id,
+        root=resolved_root,
+        main_branch=main_branch,
+        ignored_dirty_paths=repo_ignored_dirty_paths(
+            root=root,
+            repo_root=resolved_root,
+            ledger_path=ledger_path,
+            raw_paths=ignored_dirty_paths,
+        ),
+    )
+
+
+def parse_repo_specs(root: Path, raw_specs: list[str], ledger_path: Path) -> list[RepoConfig]:
     if raw_specs:
         repos = []
         for spec in raw_specs:
             if "=" not in spec:
                 raise ValueError(f"invalid repo spec '{spec}', expected ID=PATH")
             repo_id, path = spec.split("=", 1)
-            repos.append(RepoConfig(repo_id=repo_id.strip(), root=Path(path).resolve()))
+            repos.append(
+                build_repo_config(
+                    root=root,
+                    repo_id=repo_id.strip(),
+                    repo_path=path.strip(),
+                    main_branch="main",
+                    ledger_path=ledger_path,
+                    path_base="config_root",
+                )
+            )
         return repos
 
     root = root.resolve()
-    return [RepoConfig(repo_id=guess_repo_id(root), root=root)]
+    return [
+        build_repo_config(
+            root=root,
+            repo_id=guess_repo_id(root),
+            repo_path=".",
+            main_branch="main",
+            ledger_path=ledger_path,
+        )
+    ]
+
+
+def parse_repos_from_config(root: Path, data: dict[str, Any], ledger_path: Path) -> list[RepoConfig]:
+    raw_repos = data.get("repos")
+    if not raw_repos:
+        return parse_repo_specs(root, [], ledger_path)
+    if not isinstance(raw_repos, list):
+        raise ValueError("agent-systems.toml [[repos]] must be an array of tables")
+
+    repos: list[RepoConfig] = []
+    for index, raw_repo in enumerate(raw_repos, start=1):
+        if not isinstance(raw_repo, dict):
+            raise ValueError(f"repo entry #{index} must be a table")
+        repo_path = str(raw_repo.get("path", ".")).strip() or "."
+        repo_id = str(raw_repo.get("id", "")).strip() or guess_repo_id((root / repo_path).resolve())
+        main_branch = str(raw_repo.get("main_branch", "main")).strip() or "main"
+        path_base = str(raw_repo.get("path_base", "config_root")).strip() or "config_root"
+        ignored = raw_repo.get("ignored_dirty_paths")
+        if ignored is not None and not isinstance(ignored, list):
+            raise ValueError(f"repo entry #{index} ignored_dirty_paths must be a list")
+        repos.append(
+            build_repo_config(
+                root=root,
+                repo_id=repo_id,
+                repo_path=repo_path,
+                main_branch=main_branch,
+                ledger_path=ledger_path,
+                path_base=path_base,
+                ignored_dirty_paths=ignored,
+            )
+        )
+    return repos
+
+
+def load_settings(root: Path, raw_specs: list[str]) -> WorkstreamSettings:
+    root = root.resolve()
+    config_path, config_data = load_config_data(root)
+    ledger_path = parse_status_ledger_path(root, config_data)
+    if raw_specs:
+        repos = tuple(parse_repo_specs(root, raw_specs, ledger_path))
+    else:
+        repos = tuple(parse_repos_from_config(root, config_data, ledger_path))
+    return WorkstreamSettings(
+        root=root,
+        ledger_path=ledger_path,
+        repos=repos,
+        config_path=config_path,
+    )
 
 
 def manifest_plan_path(manifest_path: Path) -> Path | None:
@@ -211,7 +376,8 @@ def git_worktrees(repo: RepoConfig) -> dict[str, dict[str, Any]]:
         dirty_entries = []
         for line in status_lines[1:]:
             candidate = line[3:] if len(line) > 3 else line
-            if candidate in IGNORED_DIRTY_PATHS:
+            normalized_candidate = normalize_dirty_path(candidate)
+            if normalized_candidate in repo.ignored_dirty_paths:
                 continue
             dirty_entries.append(line)
         entries[branch] = {
@@ -556,8 +722,8 @@ def render_generated_section(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def sync_index(root: Path, payload: dict[str, Any], check: bool, confirm: bool) -> int:
-    ledger_path = root / STATUS_LEDGER_PATH
+def sync_index(settings: WorkstreamSettings, payload: dict[str, Any], check: bool, confirm: bool) -> int:
+    ledger_path = settings.ledger_path
     content = ledger_path.read_text(encoding="utf-8")
     start = content.find(GENERATED_START)
     end = content.find(GENERATED_END)
@@ -615,16 +781,15 @@ def emit_text(payload: dict[str, Any]) -> int:
 
 def main() -> int:
     args = parse_args()
-    root = args.root.resolve()
-    repos = parse_repo_specs(root, args.repo)
-    payload = build_audit(root, repos)
+    settings = load_settings(args.root.resolve(), args.repo)
+    payload = build_audit(settings.root, list(settings.repos))
     if args.command == "audit":
         if args.json:
             print(json.dumps(payload, indent=2))
             return 0
         return emit_text(payload)
     if args.command == "sync-index":
-        return sync_index(root, payload, check=args.check, confirm=args.confirm)
+        return sync_index(settings, payload, check=args.check, confirm=args.confirm)
     raise AssertionError(f"unhandled command: {args.command}")
 
 
