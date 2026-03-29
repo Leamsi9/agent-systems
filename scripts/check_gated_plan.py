@@ -1,0 +1,375 @@
+#!/usr/bin/env python3
+"""Generic gated-phase checker for substantive work manifests."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import subprocess
+import sys
+import tomllib
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+
+@dataclass
+class CheckResult:
+    check_id: str
+    check_type: str
+    passed: bool
+    detail: str
+
+
+@dataclass
+class PhaseResult:
+    phase: str
+    summary: str
+    dependencies: list[str]
+    dependency_passed: bool
+    checks: list[CheckResult]
+
+    @property
+    def passed(self) -> bool:
+        return self.dependency_passed and all(check.passed for check in self.checks)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Check a substantive-work phase manifest."
+    )
+    parser.add_argument("manifest", type=Path, help="Path to the .plan.toml manifest")
+    parser.add_argument(
+        "--phase",
+        help="Check only this phase and its transitive dependencies",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit machine-readable JSON",
+    )
+    return parser.parse_args()
+
+
+def load_manifest(path: Path) -> dict[str, Any]:
+    with path.open("rb") as handle:
+        data = tomllib.load(handle)
+    if "phases" not in data or not isinstance(data["phases"], dict):
+        raise ValueError("manifest must contain a [phases] table")
+    return data
+
+
+def resolve_root_dir(manifest_path: Path, data: dict[str, Any]) -> Path:
+    root_dir = data.get("root_dir", ".")
+    return (manifest_path.parent / root_dir).resolve()
+
+
+def ordered_phases(data: dict[str, Any]) -> list[str]:
+    phases = data["phases"]
+    order = data.get("phase_order")
+    if order is None:
+        return list(phases.keys())
+    missing = [phase for phase in order if phase not in phases]
+    if missing:
+        raise ValueError(f"phase_order contains unknown phases: {missing}")
+    return order
+
+
+def dependency_closure(phases: dict[str, Any], order: list[str], target: str | None) -> list[str]:
+    if target is None:
+        return order
+    if target not in phases:
+        raise ValueError(f"unknown phase: {target}")
+
+    visited: set[str] = set()
+
+    def visit(phase_name: str) -> None:
+        if phase_name in visited:
+            return
+        visited.add(phase_name)
+        depends_on = phases[phase_name].get("depends_on", [])
+        for dependency in depends_on:
+            if dependency not in phases:
+                raise ValueError(
+                    f"phase '{phase_name}' depends on unknown phase '{dependency}'"
+                )
+            visit(dependency)
+
+    visit(target)
+    return [phase for phase in order if phase in visited]
+
+
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def resolve_check_path(root_dir: Path, raw_value: str) -> Path:
+    target = Path(raw_value)
+    if target.is_absolute():
+        return target
+    return (root_dir / target).resolve()
+
+
+def run_git(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+    )
+
+
+def resolve_repo_dir(root_dir: Path, raw_check: dict[str, Any]) -> Path:
+    repo_value = str(raw_check.get("repo", "."))
+    return resolve_check_path(root_dir, repo_value)
+
+
+def run_check(root_dir: Path, raw_check: dict[str, Any]) -> CheckResult:
+    check_id = str(raw_check.get("id", "<unnamed>"))
+    check_type = str(raw_check.get("type", "")).strip()
+    if not check_type:
+        return CheckResult(check_id, check_type, False, "missing check type")
+
+    if check_type in {
+        "path_exists",
+        "path_absent",
+        "text_present",
+        "text_absent",
+        "regex_present",
+        "regex_absent",
+        "worktree_absent",
+    }:
+        path_value = raw_check.get("path")
+        if not path_value:
+            return CheckResult(check_id, check_type, False, "missing path")
+        target = resolve_check_path(root_dir, str(path_value))
+
+    if check_type == "path_exists":
+        passed = target.exists()
+        return CheckResult(check_id, check_type, passed, str(target))
+
+    if check_type == "path_absent":
+        passed = not target.exists()
+        return CheckResult(check_id, check_type, passed, str(target))
+
+    if check_type == "text_present":
+        expected = str(raw_check.get("text", ""))
+        content = read_text(target)
+        passed = expected in content
+        return CheckResult(check_id, check_type, passed, str(target))
+
+    if check_type == "text_absent":
+        expected = str(raw_check.get("text", ""))
+        content = read_text(target)
+        passed = expected not in content
+        return CheckResult(check_id, check_type, passed, str(target))
+
+    if check_type == "regex_present":
+        pattern = str(raw_check.get("pattern", ""))
+        content = read_text(target)
+        passed = re.search(pattern, content, re.MULTILINE) is not None
+        return CheckResult(check_id, check_type, passed, str(target))
+
+    if check_type == "regex_absent":
+        pattern = str(raw_check.get("pattern", ""))
+        content = read_text(target)
+        passed = re.search(pattern, content, re.MULTILINE) is None
+        return CheckResult(check_id, check_type, passed, str(target))
+
+    if check_type == "worktree_absent":
+        passed = not target.exists()
+        return CheckResult(check_id, check_type, passed, str(target))
+
+    if check_type == "git_clean":
+        repo_dir = resolve_repo_dir(root_dir, raw_check)
+        completed = run_git(["status", "--porcelain", "--untracked-files=all"], repo_dir)
+        if completed.returncode != 0:
+            detail = completed.stderr.strip() or f"git exited {completed.returncode}"
+            return CheckResult(check_id, check_type, False, detail)
+        detail = completed.stdout.strip()
+        passed = detail == ""
+        return CheckResult(check_id, check_type, passed, detail or "clean")
+
+    if check_type == "git_merged_into":
+        repo_dir = resolve_repo_dir(root_dir, raw_check)
+        branch = str(raw_check.get("branch", "")).strip()
+        target_branch = str(raw_check.get("into", "")).strip()
+        if not branch or not target_branch:
+            return CheckResult(
+                check_id,
+                check_type,
+                False,
+                "missing branch or into",
+            )
+        completed = run_git(
+            ["merge-base", "--is-ancestor", branch, target_branch],
+            repo_dir,
+        )
+        detail = (
+            f"{branch} is merged into {target_branch}"
+            if completed.returncode == 0
+            else completed.stderr.strip() or f"{branch} is not merged into {target_branch}"
+        )
+        return CheckResult(check_id, check_type, completed.returncode == 0, detail)
+
+    if check_type == "git_ref_equals":
+        repo_dir = resolve_repo_dir(root_dir, raw_check)
+        left = str(raw_check.get("left", "")).strip()
+        right = str(raw_check.get("right", "")).strip()
+        if not left or not right:
+            return CheckResult(check_id, check_type, False, "missing left or right")
+        left_result = run_git(["rev-parse", left], repo_dir)
+        right_result = run_git(["rev-parse", right], repo_dir)
+        if left_result.returncode != 0 or right_result.returncode != 0:
+            detail = (
+                left_result.stderr.strip()
+                or right_result.stderr.strip()
+                or "failed to resolve refs"
+            )
+            return CheckResult(check_id, check_type, False, detail)
+        left_sha = left_result.stdout.strip()
+        right_sha = right_result.stdout.strip()
+        passed = left_sha == right_sha
+        detail = f"{left_sha} == {right_sha}" if passed else f"{left_sha} != {right_sha}"
+        return CheckResult(check_id, check_type, passed, detail)
+
+    if check_type == "git_branch_absent":
+        repo_dir = resolve_repo_dir(root_dir, raw_check)
+        branch = str(raw_check.get("branch", "")).strip()
+        if not branch:
+            return CheckResult(check_id, check_type, False, "missing branch")
+        completed = run_git(["show-ref", "--verify", "--quiet", f"refs/heads/{branch}"], repo_dir)
+        passed = completed.returncode != 0
+        detail = (
+            f"refs/heads/{branch} absent"
+            if passed
+            else f"refs/heads/{branch} present"
+        )
+        return CheckResult(check_id, check_type, passed, detail)
+
+    if check_type == "command":
+        command = str(raw_check.get("command", "")).strip()
+        if not command:
+            return CheckResult(check_id, check_type, False, "missing command")
+        cwd = root_dir
+        if raw_check.get("cwd"):
+            cwd = (root_dir / str(raw_check["cwd"])).resolve()
+        completed = subprocess.run(
+            command,
+            shell=True,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+        )
+        detail = completed.stdout.strip() or completed.stderr.strip() or f"exit {completed.returncode}"
+        return CheckResult(check_id, check_type, completed.returncode == 0, detail)
+
+    return CheckResult(
+        check_id,
+        check_type,
+        False,
+        f"unsupported check type: {check_type}",
+    )
+
+
+def evaluate_manifest(
+    data: dict[str, Any], root_dir: Path, target_phase: str | None
+) -> list[PhaseResult]:
+    phases = data["phases"]
+    order = ordered_phases(data)
+    selected = dependency_closure(phases, order, target_phase)
+
+    results_by_phase: dict[str, PhaseResult] = {}
+    ordered_results: list[PhaseResult] = []
+
+    for phase_name in selected:
+        phase_data = phases[phase_name]
+        dependencies = list(phase_data.get("depends_on", []))
+        dependency_passed = all(
+            results_by_phase[dependency].passed
+            for dependency in dependencies
+            if dependency in results_by_phase
+        )
+        checks = [
+            run_check(root_dir, raw_check)
+            for raw_check in phase_data.get("checks", [])
+        ]
+        result = PhaseResult(
+            phase=phase_name,
+            summary=str(phase_data.get("summary", "")).strip(),
+            dependencies=dependencies,
+            dependency_passed=dependency_passed,
+            checks=checks,
+        )
+        results_by_phase[phase_name] = result
+        ordered_results.append(result)
+
+    return ordered_results
+
+
+def emit_text(results: list[PhaseResult]) -> int:
+    all_passed = True
+    for phase in results:
+        phase_prefix = "PASS" if phase.passed else "FAIL"
+        print(f"{phase_prefix} {phase.phase}: {phase.summary}")
+        if phase.dependencies:
+            dep_prefix = "deps ok" if phase.dependency_passed else "deps failed"
+            print(f"  {dep_prefix}: {', '.join(phase.dependencies)}")
+        for check in phase.checks:
+            check_prefix = "ok" if check.passed else "fail"
+            print(
+                f"  [{check_prefix}] {check.check_id} ({check.check_type}) - {check.detail}"
+            )
+        all_passed = all_passed and phase.passed
+    return 0 if all_passed else 1
+
+
+def emit_json(results: list[PhaseResult]) -> int:
+    payload = {
+        "passed": all(phase.passed for phase in results),
+        "phases": [
+            {
+                "phase": phase.phase,
+                "summary": phase.summary,
+                "dependencies": phase.dependencies,
+                "dependency_passed": phase.dependency_passed,
+                "passed": phase.passed,
+                "checks": [
+                    {
+                        "id": check.check_id,
+                        "type": check.check_type,
+                        "passed": check.passed,
+                        "detail": check.detail,
+                    }
+                    for check in phase.checks
+                ],
+            }
+            for phase in results
+        ],
+    }
+    print(json.dumps(payload, indent=2))
+    return 0 if payload["passed"] else 1
+
+
+def main() -> int:
+    args = parse_args()
+    manifest_path = args.manifest.resolve()
+    try:
+        data = load_manifest(manifest_path)
+        root_dir = resolve_root_dir(manifest_path, data)
+        results = evaluate_manifest(data, root_dir, args.phase)
+    except Exception as exc:  # pragma: no cover - CLI guard
+        if args.json:
+            print(json.dumps({"passed": False, "error": str(exc)}, indent=2))
+        else:
+            print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+
+    if args.json:
+        return emit_json(results)
+    return emit_text(results)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
