@@ -131,16 +131,34 @@ Use one of these shapes, depending on how the codebase is actually worked on:
   rooted to `.`.
 - Workspace anchor repo:
   Pick one primary repo to own integrated cross-repo plans and the shared live
-  ledger, then list sibling repos in `agent-protocols.toml`.
+  ledger, then list sibling repos in that repo's `agent-protocols.toml`.
 - Standalone sibling repo:
   If a sibling repo is also worked on independently, vendor its own
   `agent-protocols/` copy there too, with a repo-local config and ledger.
 
-Recommended rule:
+Important clarifications:
+
+- The workspace anchor repo still vendors `agent-protocols/` for itself.
+  Its local vendored copy is also the cross-repo orchestration copy.
+- A sibling repo having its own vendored `agent-protocols/` does not create a
+  technical clash by itself.
+  Each repo keeps its own local `agent-protocols.toml`, local instruction
+  pointers, and optional local ledger.
+- The real thing to avoid is split authority:
+  do not let multiple repos in the same workspace each claim to be the
+  cross-repo orchestration root for the same set of workstreams.
+- Cross-repo work should normally start from the chosen workspace anchor repo.
+  Single-repo work can still start inside any repo that has its own local
+  package copy.
+
+Recommended rule set:
 
 - Cross-repo workstreams should have one orchestration root.
+- That orchestration root also has its own normal vendored package copy.
 - Repos that are regularly opened on their own should also carry their own
   local package instance.
+- If a sibling repo only ever participates through the orchestration root, it
+  does not have to vendor its own copy.
 - Generic improvements made in any consumer repo should be upstreamed here.
 
 The goal is one reusable canonical package and no duplicate authorities inside
