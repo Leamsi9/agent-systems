@@ -38,6 +38,11 @@ path = "docs/plans/README.md"
 text = "docs/live-workstream-status.md"
 
 [[phases.acceptance.checks]]
+id = "cross-repo-readme-exists"
+type = "path_exists"
+path = "docs/plans/cross-repo/README.md"
+
+[[phases.acceptance.checks]]
 id = "scripts-compile"
 type = "command"
 command = "python3 -m py_compile scripts/check_gated_plan.py scripts/workstream.py"

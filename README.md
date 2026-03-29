@@ -121,6 +121,9 @@ normally keep:
   Proposal logs.
 - `docs/live-workstream-status.md`
   Script-owned current-state ledger.
+- `docs/plans/cross-repo/README.md`
+  Optional extension for repos that act as the canonical orchestration root for
+  coordinated multi-repo work.
 
 ## Recommended Topologies
 
@@ -136,12 +139,45 @@ Use one of these shapes, depending on how the codebase is actually worked on:
   If a sibling repo is also worked on independently, vendor its own
   `agent-protocols/` copy there too, with a repo-local config and ledger.
 
+Important clarifications:
+
+- The workspace anchor repo still vendors `agent-protocols/` for itself.
+  Its local vendored copy is also the cross-repo orchestration copy.
+- A sibling repo having its own vendored `agent-protocols/` does not create a
+  technical clash by itself.
+  Each repo keeps its own local `agent-protocols.toml`, local instruction
+  pointers, and optional local ledger.
+- The real thing to avoid is split authority:
+  do not let multiple repos in the same workspace each claim to be the
+  cross-repo orchestration root for the same set of workstreams.
+- Cross-repo work should normally start from the chosen workspace anchor repo.
+  Single-repo work can still start inside any repo that has its own local
+  package copy.
+
 Recommended rule:
 
 - Cross-repo workstreams should have one orchestration root.
 - Repos that are regularly opened on their own should also carry their own
   local package instance.
 - Generic improvements made in any consumer repo should be upstreamed here.
+
+Cross-repo planning shape:
+
+- local plans stay in the default taxonomy directly under `docs/plans/`
+- cross-repo plans live under `docs/plans/cross-repo/` only in the chosen
+  orchestration repo
+- sibling repos may keep thin local notes that point back to the canonical
+  cross-repo plan, but should not duplicate the full plan family
+
+Placement heuristic:
+
+- use the default local taxonomy when one repo can own implementation,
+  validation, and acceptance
+- use `docs/plans/cross-repo/` only when completion or acceptance depends on
+  coordinated work across 2+ repos
+- mentioning another repo as context does not make a plan `cross-repo`
+- if a local plan later expands into coordinated multi-repo work, supersede or
+  promote it into the orchestration repo under `docs/plans/cross-repo/`
 
 The goal is one reusable canonical package and no duplicate authorities inside
 each consuming repo.

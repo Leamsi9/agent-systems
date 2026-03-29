@@ -40,6 +40,10 @@ Use explicit status buckets under `docs/plans/proposals/`:
 
 Historical proposal plan families move to `docs/plans/archive/`.
 
+For orchestration repos that use the optional cross-repo extension, keep
+cross-repo proposal plan families under `docs/plans/cross-repo/proposals/`
+with the same status buckets.
+
 ### Pending ADRs
 
 - accepted ADRs stay in `docs/adr/`
@@ -111,6 +115,12 @@ Examples:
 - cross-repo implementation idea with no concrete product-owned target yet:
   - keep the plan plus pending ADR in the shared repo
   - keep one proposal log in the shared repo
+
+Placement heuristic:
+
+- local proposal work stays in the default `docs/plans/proposals/` taxonomy
+- use `docs/plans/cross-repo/proposals/` only when the proposal needs
+  coordinated review, implementation planning, or acceptance across 2+ repos
 
 ## Proposal Log Content
 

@@ -9,6 +9,7 @@ Start here:
 
 - [Plan protocol](../../plan-protocol.md)
 - [Plans index](plans-index.md)
+- [Cross-repo extension](cross-repo/README.md)
 - [Live workstream status](../live-workstream-status.md)
 
 Canonical repo-local paths:

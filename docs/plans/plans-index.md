@@ -4,7 +4,7 @@ This directory stores durable plan families for the consuming repo.
 
 The canonical reusable planning guidance lives in:
 
-- [Agent systems plan protocol](../../plan-protocol.md)
+- [Agent protocols plan protocol](../../plan-protocol.md)
 
 Live branch and worktree state is tracked separately in:
 
@@ -19,6 +19,8 @@ Use these stable subdirectories:
 - `hotfix/` for urgent corrective plans
 - `proposals/` for proposal-only plan families
 - `archive/` for parked, superseded, promoted, or historical plan families
+- `cross-repo/` as an orchestrator-only extension for canonical plan families
+  whose completion or acceptance depends on coordinated work across 2+ repos
 
 Within `docs/plans/proposals/`, use explicit status buckets:
 
@@ -60,3 +62,7 @@ None.
 ### `archive/`
 
 None.
+
+### `cross-repo/`
+
+- [Cross-repo extension README](cross-repo/README.md)

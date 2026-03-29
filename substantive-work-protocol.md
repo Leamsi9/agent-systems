@@ -53,6 +53,10 @@ Substantive work should use these artifacts.
 
 Store the durable workstream plan in `docs/plans/`.
 
+If the repo uses the optional `docs/plans/cross-repo/` extension and the work
+requires coordinated implementation or acceptance across multiple repos, keep
+the canonical plan there instead of in the local-only buckets.
+
 The plan should record:
 
 - the goal
@@ -99,6 +103,20 @@ plan. Keep those notes in `docs/plans/`, not in runtime procedure folders.
 If one repo or product owns the canonical plan, other repos should point back
 to it and add thin local notes only when they genuinely need companion
 guidance.
+
+### 7. Placement heuristic for local versus cross-repo plans
+
+Use the default local taxonomy when one repo can own implementation,
+validation, and acceptance.
+
+Use `docs/plans/cross-repo/` only when completion or acceptance depends on
+coordinated work across 2+ repos.
+
+Another repo being referenced for context does not make a plan cross-repo by
+itself.
+
+If a local plan later expands into coordinated multi-repo work, supersede it
+or promote it into the orchestration repo under `docs/plans/cross-repo/`.
 
 ## Phase Structure
 

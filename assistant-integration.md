@@ -95,7 +95,12 @@ In multi-repo workspaces, treat one repo as the orchestration root for
 cross-repo workstreams and live status.
 
 - That root repo should list sibling repos in `agent-protocols.toml`.
+- That root repo should keep coordinated multi-repo plan families under
+  `docs/plans/cross-repo/`.
 - Sibling repos that are also worked on independently should vendor their own
   `agent-protocols/` copy too.
+- Local plans should stay in each repo's default `docs/plans/` taxonomy.
+- Those sibling local copies do not clash with the orchestration copy unless
+  multiple repos start acting as cross-repo authorities at the same time.
 - Cross-repo plans should live in one place, not be duplicated across sibling
   repos.

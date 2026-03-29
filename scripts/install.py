@@ -472,6 +472,7 @@ This `README.md` is only the landing page. The durable inventory lives in
 Start here:
 
 - `docs/plans/plans-index.md`
+- `docs/plans/cross-repo/README.md`
 - `docs/live-workstream-status.md`
 - `agent-protocols/substantive-work-protocol.md`
 - `agent-protocols/proposal-protocol.md`
@@ -498,6 +499,30 @@ Live branch and worktree state is tracked separately in:
 - `hotfix/`
 - `proposals/`
 - `archive/`
+
+Optional extension:
+
+- `cross-repo/` as an orchestrator-only extension for canonical plan families
+  whose completion or acceptance depends on coordinated work across 2+ repos
+"""
+
+
+def cross_repo_readme() -> str:
+    return """# Cross-Repo Plans
+
+This extension is for repos that act as the canonical orchestration root for
+coordinated multi-repo work.
+
+Use the default `docs/plans/` taxonomy for local work owned and accepted inside
+one repo.
+
+Use `docs/plans/cross-repo/` only when completion or acceptance depends on
+coordinated work across 2+ repos.
+
+Another repo being mentioned as context does not make a plan cross-repo.
+
+If this repo is not acting as an orchestration root yet, keep this folder
+empty apart from this README.
 """
 
 
@@ -597,6 +622,11 @@ path = "docs/plans/README.md"
 text = "docs/live-workstream-status.md"
 
 [[phases.acceptance.checks]]
+id = "cross-repo-readme-exists"
+type = "path_exists"
+path = "docs/plans/cross-repo/README.md"
+
+[[phases.acceptance.checks]]
 id = "scripts-compile"
 type = "command"
 command = "python3 -m py_compile agent-protocols/scripts/check_gated_plan.py agent-protocols/scripts/workstream.py"
@@ -631,6 +661,7 @@ def scaffold(
         "docs/plans/hotfix",
         "docs/plans/sync",
         "docs/plans/archive",
+        "docs/plans/cross-repo",
         "docs/plans/proposals/active",
         "docs/plans/proposals/pending",
         "docs/plans/proposals/blocked",
@@ -644,8 +675,22 @@ def scaffold(
     ]:
         (target / relative).mkdir(parents=True, exist_ok=True)
 
+    if linked_repos:
+        for relative in [
+            "docs/plans/cross-repo/feature",
+            "docs/plans/cross-repo/hotfix",
+            "docs/plans/cross-repo/sync",
+            "docs/plans/cross-repo/archive",
+            "docs/plans/cross-repo/proposals/active",
+            "docs/plans/cross-repo/proposals/pending",
+            "docs/plans/cross-repo/proposals/blocked",
+            "docs/plans/cross-repo/proposals/in-progress",
+        ]:
+            (target / relative).mkdir(parents=True, exist_ok=True)
+
     write_if_missing(target / "docs/plans/README.md", plans_readme())
     write_if_missing(target / "docs/plans/plans-index.md", plans_index())
+    write_if_missing(target / "docs/plans/cross-repo/README.md", cross_repo_readme())
     write_if_missing(target / DEFAULT_LEDGER_PATH, live_ledger())
     write_if_missing(target / "docs/proposals/README.md", proposals_readme())
     write_if_missing(target / "docs/adr/pending/README.md", pending_adr_readme())

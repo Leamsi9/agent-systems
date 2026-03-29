@@ -41,6 +41,11 @@ Use these stable subdirectories by default:
 - `proposals/` for proposal-only plan families
 - `archive/` for parked, superseded, promoted, or historical plan families
 
+Optional extension for orchestration repos:
+
+- `cross-repo/` for canonical plan families whose completion or acceptance
+  depends on coordinated work across 2+ repos
+
 Within `docs/plans/proposals/`, use explicit status buckets:
 
 - `active/`
@@ -95,6 +100,11 @@ The durable plan should also record:
 
 The manifest is the fail-closed oracle for whether a phase is done. Do not mark
 a phase complete from narrative judgement alone.
+
+When `Scope` is used, keep it explicit:
+
+- `local` for work owned and accepted inside one repo
+- `cross-repo` for work whose completion or acceptance depends on 2+ repos
 
 ## Manifest Vs Proposal
 
@@ -169,6 +179,20 @@ instead of moving it into `docs/history/`.
 One repo should own the canonical durable plan. Other repos may keep thin local
 mirrors only when a phase needs repo-specific notes, but they should point back
 to the canonical plan and protocol instead of duplicating them.
+
+For repos that use the optional extension, place canonical cross-repo plans
+under `docs/plans/cross-repo/`.
+
+Use the default local taxonomy when one repo can own implementation,
+validation, and acceptance.
+
+Use `cross-repo/` only when completion or acceptance depends on coordinated
+work across 2+ repos.
+
+Mentioning another repo as context does not make a plan cross-repo.
+
+If a local plan later expands into coordinated multi-repo work, supersede or
+promote it into the orchestration repo under `docs/plans/cross-repo/`.
 
 ## Promotion Rule
 
