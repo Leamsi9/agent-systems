@@ -54,6 +54,11 @@ def default_root() -> Path:
 
 
 def guess_repo_id(path: Path) -> str:
+    result = run_command(["git", "rev-parse", "--git-common-dir"], path)
+    if result.returncode == 0:
+        common_dir = result.stdout.strip()
+        if common_dir:
+            return Path(common_dir).resolve().parent.name
     return path.name
 
 
