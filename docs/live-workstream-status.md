@@ -23,12 +23,12 @@ Refresh this ledger with:
 
 This section is generated from live git and worktree state by the agent-systems workstream script.
 
-_Last generated: 2026-03-29T16:07:26.655441+00:00_
+_Last generated: 2026-03-29T16:10:25.912574+00:00_
 
 ### Summary
 | Repo | Main | Non-main branches | Attached worktrees | Dirty worktrees |
 | --- | --- | --- | --- | --- |
-| agent-systems | main | 0 | 0 | 0 |
+| agent-systems | main | 0 | 1 | 0 |
 
 ### Active, Promotable, And Diverged Branches
 None.
