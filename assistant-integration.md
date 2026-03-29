@@ -9,10 +9,10 @@ Keep one reusable package and point assistant-specific entrypoints at it.
 
 Recommended approach:
 
-1. vendor the package as `agent-systems/`
-2. keep repo topology in a repo-local `agent-systems.toml`
+1. vendor the package as `agent-protocols/`
+2. keep repo topology in a repo-local `agent-protocols.toml`
 3. point assistant instruction files at
-   `agent-systems/substantive-work-protocol.md`
+   `agent-protocols/substantive-work-protocol.md`
 4. keep repo-specific landing pages, ledgers, ADRs, and proposal logs outside
    the vendored package
 
@@ -34,8 +34,8 @@ duplicating it.
 Use a short pointer such as:
 
 ```md
-For substantive work, follow `agent-systems/substantive-work-protocol.md`.
-Repo topology and linked repos are declared in `agent-systems.toml`.
+For substantive work, follow `agent-protocols/substantive-work-protocol.md`.
+Repo topology and linked repos are declared in `agent-protocols.toml`.
 ```
 
 ## Bootstrap Help
@@ -44,20 +44,26 @@ The package installer can vendor the package, create the config file, and
 scaffold the docs skeleton for a new repo:
 
 ```bash
-python3 agent-systems/scripts/install.py --target . --repo-id my-repo
+python3 agent-protocols/scripts/install.py --target . --repo-id my-repo
 ```
 
 For linked repos that should resolve relative to the git common root instead of
 the config file location:
 
 ```bash
-python3 agent-systems/scripts/install.py --target . --repo-id my-repo --linked-repo workspace@git_common_root=../workspace
+python3 agent-protocols/scripts/install.py --target . --repo-id my-repo --linked-repo workspace@git_common_root=../workspace
 ```
 
 To print short assistant pointer snippets after scaffolding:
 
 ```bash
-python3 agent-systems/scripts/install.py --target . --repo-id my-repo --print-assistant-snippets
+python3 agent-protocols/scripts/install.py --target . --repo-id my-repo --print-assistant-snippets
+```
+
+To print a rendered copy-paste adoption prompt for a coding assistant:
+
+```bash
+python3 agent-protocols/scripts/install.py --target . --repo-id my-repo --print-adoption-prompt
 ```
 
 ## Upstreaming Rule

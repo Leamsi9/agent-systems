@@ -1,7 +1,7 @@
 # Substantive Work Protocol
 
 This is the canonical planning and execution workflow for substantive work in a
-repo that vendors `agent-systems/`.
+repo that vendors `agent-protocols/`.
 
 Use it for any non-trivial feature, fix, refactor, migration, or cross-repo
 change.
@@ -196,7 +196,7 @@ with a smaller working set.
 Use the canonical checker:
 
 ```bash
-python3 agent-systems/scripts/check_gated_plan.py path/to/work.plan.toml --phase phase_name
+python3 agent-protocols/scripts/check_gated_plan.py path/to/work.plan.toml --phase phase_name
 ```
 
 Supported check types are illustrated in:

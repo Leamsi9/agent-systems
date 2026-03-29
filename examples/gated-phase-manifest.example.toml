@@ -4,9 +4,9 @@ root_dir = "../../.."
 completion_ledger = "docs/plans/feature/example-workstream-completion.md"
 phase_order = ["branch_setup", "implementation", "closeout"]
 
-# Proposal-only slices should also follow agent-systems/proposal-protocol.md.
+# Proposal-only slices should also follow agent-protocols/proposal-protocol.md.
 # Run this manifest with:
-# python3 agent-systems/scripts/check_gated_plan.py path/to/work.plan.toml --phase phase_name
+# python3 agent-protocols/scripts/check_gated_plan.py path/to/work.plan.toml --phase phase_name
 
 [phases.branch_setup]
 summary = "Create the dedicated branch and durable plan artifacts."
@@ -14,7 +14,7 @@ summary = "Create the dedicated branch and durable plan artifacts."
 [[phases.branch_setup.checks]]
 id = "protocol-doc-exists"
 type = "path_exists"
-path = "agent-systems/substantive-work-protocol.md"
+path = "agent-protocols/substantive-work-protocol.md"
 
 [[phases.branch_setup.checks]]
 id = "plans-landing-page-exists"

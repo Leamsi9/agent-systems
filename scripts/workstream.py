@@ -18,7 +18,7 @@ from typing import Any
 GENERATED_START = "<!-- BEGIN GENERATED WORKSTREAM STATE -->"
 GENERATED_END = "<!-- END GENERATED WORKSTREAM STATE -->"
 DEFAULT_STATUS_LEDGER_PATH = Path("docs/live-workstream-status.md")
-DEFAULT_CONFIG_PATH = Path("agent-systems.toml")
+DEFAULT_CONFIG_PATH = Path("agent-protocols.toml")
 HISTORICAL_PREFIXES = ("backup/", "recovery/", "audit/", "hotfix/", "safety/")
 HISTORICAL_NAMES = {"staging"}
 STATUS_PATTERN = re.compile(r"^- Status:\s*(.+?)\s*$", re.MULTILINE)
@@ -101,7 +101,7 @@ def parse_args() -> argparse.Namespace:
         action="append",
         default=[],
         metavar="ID=PATH",
-        help="Additional repo roots to audit. Overrides repo topology from agent-systems.toml when provided.",
+        help="Additional repo roots to audit. Overrides repo topology from agent-protocols.toml when provided.",
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -158,7 +158,7 @@ def load_config_data(root: Path) -> tuple[Path | None, dict[str, Any]]:
         data = tomllib.load(handle)
     version = data.get("version", 1)
     if version != 1:
-        raise ValueError(f"unsupported agent-systems config version: {version}")
+        raise ValueError(f"unsupported agent-protocols config version: {version}")
     return config_path, data
 
 
@@ -256,7 +256,7 @@ def parse_repos_from_config(root: Path, data: dict[str, Any], ledger_path: Path)
     if not raw_repos:
         return parse_repo_specs(root, [], ledger_path)
     if not isinstance(raw_repos, list):
-        raise ValueError("agent-systems.toml [[repos]] must be an array of tables")
+        raise ValueError("agent-protocols.toml [[repos]] must be an array of tables")
 
     repos: list[RepoConfig] = []
     for index, raw_repo in enumerate(raw_repos, start=1):
@@ -607,7 +607,7 @@ def render_generated_section(payload: dict[str, Any]) -> str:
         GENERATED_START,
         "## Generated Status Snapshot",
         "",
-        "This section is generated from live git and worktree state by the agent-systems workstream script.",
+        "This section is generated from live git and worktree state by the agent-protocols workstream script.",
         "",
         f"_Last generated: {payload['generated_at']}_",
         "",

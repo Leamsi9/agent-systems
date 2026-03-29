@@ -9,8 +9,8 @@ Use a dedicated upstream repo plus a vendored folder in consumers.
 
 Recommended flow:
 
-1. publish and tag releases in `https://github.com/Leamsi9/agent-systems`
-2. vendor the package into consumer repos as `agent-systems/`
+1. publish and tag releases in `https://github.com/Leamsi9/agent-protocols`
+2. vendor the package into consumer repos as `agent-protocols/`
 3. keep a `VERSION` file inside the vendored copy
 4. update consumers by copying a tagged release or by pulling a subtree update
 
@@ -54,7 +54,7 @@ pages, ledgers, ADRs, and proposal logs in the consuming repo.
 If a consumer repo discovers a generic improvement:
 
 1. implement and validate it locally
-2. open a branch or PR against `Leamsi9/agent-systems`
+2. open a branch or PR against `Leamsi9/agent-protocols`
 3. then sync the resulting upstream package change back into consumers
 
 Do not let long-lived consumer-only package forks become the default workflow.

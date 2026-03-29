@@ -21,20 +21,23 @@ Refresh this ledger with:
 <!-- BEGIN GENERATED WORKSTREAM STATE -->
 ## Generated Status Snapshot
 
-This section is generated from live git and worktree state by the agent-systems workstream script.
+This section is generated from live git and worktree state by the agent-protocols workstream script.
 
-_Last generated: 2026-03-29T16:14:59.914561+00:00_
+_Last generated: 2026-03-29T17:19:20.116765+00:00_
 
 ### Summary
 | Repo | Main | Non-main branches | Attached worktrees | Dirty worktrees |
 | --- | --- | --- | --- | --- |
-| agent-systems | main | 0 | 1 | 0 |
+| agent-protocols | main | 2 | 1 | 1 |
 
 ### Active, Promotable, And Diverged Branches
 None.
 
 ### Historical And Merged-Stale Branches
-None.
+| Repo | Branch | Class | Worktree | State | Ahead | Behind | Plan |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| agent-protocols | feature/agent-protocols-rename-2026-03-29 | merged_stale | agent-protocols | dirty | - | - | - |
+| agent-protocols | feature/config-driven-adoption-2026-03-29 | merged_stale | - | clean | - | - | - |
 
 ### Pending Proposals Without Live Branches
 None.

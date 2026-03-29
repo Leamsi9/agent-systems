@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scaffold repo-local agent-systems integration files."""
+"""Scaffold repo-local agent-protocols integration files."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ VENDORED_FILES = [
     "VERSION",
     "SYNCING.md",
     "assistant-integration.md",
+    "assistant-adoption-prompt.md",
     "substantive-work-protocol.md",
     "proposal-protocol.md",
     "plan-protocol.md",
@@ -30,7 +31,7 @@ VENDORED_DIRS = [
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Scaffold repo-local agent-systems config and docs."
+        description="Scaffold repo-local agent-protocols config and docs."
     )
     parser.add_argument(
         "--target",
@@ -53,7 +54,7 @@ def parse_args() -> argparse.Namespace:
         default=[],
         metavar="ID=PATH",
         help=(
-            "Additional linked repo entries to add to agent-systems.toml. "
+            "Additional linked repo entries to add to agent-protocols.toml. "
             "Use ID=PATH for config-root-relative repos or "
             "ID@git_common_root=PATH for worktree-aware sibling repos."
         ),
@@ -64,8 +65,13 @@ def parse_args() -> argparse.Namespace:
         help="Print short assistant entrypoint snippets after scaffolding.",
     )
     parser.add_argument(
+        "--print-adoption-prompt",
+        action="store_true",
+        help="Print a rendered copy-paste prompt for a code assistant.",
+    )
+    parser.add_argument(
         "--vendor-dir",
-        default="agent-systems",
+        default="agent-protocols",
         help="Directory name to use when vendoring the package into the target repo.",
     )
     return parser.parse_args()
@@ -176,8 +182,8 @@ Start here:
 
 - `docs/plans/plans-index.md`
 - `docs/live-workstream-status.md`
-- `agent-systems/substantive-work-protocol.md`
-- `agent-systems/proposal-protocol.md`
+- `agent-protocols/substantive-work-protocol.md`
+- `agent-protocols/proposal-protocol.md`
 """
 
 
@@ -188,7 +194,7 @@ This directory stores durable plan families for this repo.
 
 The canonical reusable planning guidance lives in:
 
-- `agent-systems/plan-protocol.md`
+- `agent-protocols/plan-protocol.md`
 
 Live branch and worktree state is tracked separately in:
 
@@ -223,7 +229,7 @@ families.
 
 Refresh this ledger with:
 
-- `python3 agent-systems/scripts/workstream.py sync-index --confirm`
+- `python3 agent-protocols/scripts/workstream.py sync-index --confirm`
 
 <!-- BEGIN GENERATED WORKSTREAM STATE -->
 Template placeholder.
@@ -302,7 +308,7 @@ text = "docs/live-workstream-status.md"
 [[phases.acceptance.checks]]
 id = "scripts-compile"
 type = "command"
-command = "python3 -m py_compile agent-systems/scripts/check_gated_plan.py agent-systems/scripts/workstream.py"
+command = "python3 -m py_compile agent-protocols/scripts/check_gated_plan.py agent-protocols/scripts/workstream.py"
 """
 
 
@@ -325,7 +331,7 @@ def scaffold(
     target.mkdir(parents=True, exist_ok=True)
     copy_package(package_root(), target, vendor_dir)
     write_if_missing(
-        target / "agent-systems.toml",
+        target / "agent-protocols.toml",
         build_config(repo_id=repo_id, main_branch=main_branch, linked_repos=linked_repos),
     )
 
@@ -365,11 +371,28 @@ def scaffold(
 
 def print_assistant_snippets() -> None:
     snippet = (
-        "For substantive work, follow `agent-systems/substantive-work-protocol.md`.\n"
-        "Repo topology and linked repos are declared in `agent-systems.toml`.\n"
+        "For substantive work, follow `agent-protocols/substantive-work-protocol.md`.\n"
+        "Repo topology and linked repos are declared in `agent-protocols.toml`.\n"
     )
     print("AGENTS.md / CLAUDE.md snippet:\n")
     print(snippet)
+
+
+def render_adoption_prompt(repo_id: str, main_branch: str, vendor_dir: str) -> str:
+    template = (package_root() / "assistant-adoption-prompt.md").read_text(
+        encoding="utf-8"
+    )
+    return (
+        template.replace("{{REPO_ID}}", repo_id)
+        .replace("{{MAIN_BRANCH}}", main_branch)
+        .replace("{{VENDOR_DIR}}", vendor_dir)
+        .replace("{{CONFIG_FILE}}", "agent-protocols.toml")
+    )
+
+
+def print_adoption_prompt(repo_id: str, main_branch: str, vendor_dir: str) -> None:
+    print("Assistant adoption prompt:\n")
+    print(render_adoption_prompt(repo_id=repo_id, main_branch=main_branch, vendor_dir=vendor_dir))
 
 
 def main() -> int:
@@ -384,10 +407,17 @@ def main() -> int:
         linked_repos=linked_repos,
         vendor_dir=args.vendor_dir,
     )
-    print(f"scaffolded agent-systems integration in {target}")
+    print(f"scaffolded agent-protocols integration in {target}")
     if args.print_assistant_snippets:
         print()
         print_assistant_snippets()
+    if args.print_adoption_prompt:
+        print()
+        print_adoption_prompt(
+            repo_id=repo_id,
+            main_branch=args.main_branch,
+            vendor_dir=args.vendor_dir,
+        )
     return 0
 
 

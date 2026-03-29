@@ -1,4 +1,4 @@
-# Agent Systems Example Docs
+# Agent Protocols Example Docs
 
 This `docs/` tree is a minimal example surface that shows how the reusable
 package can be adopted inside a repo.
