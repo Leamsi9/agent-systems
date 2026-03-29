@@ -58,7 +58,10 @@ def guess_repo_id(path: Path) -> str:
     if result.returncode == 0:
         common_dir = result.stdout.strip()
         if common_dir:
-            return Path(common_dir).resolve().parent.name
+            common_path = Path(common_dir)
+            if not common_path.is_absolute():
+                common_path = (path / common_path).resolve()
+            return common_path.parent.name
     return path.name
 
 
