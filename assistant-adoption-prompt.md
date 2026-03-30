@@ -40,6 +40,7 @@ Requirements:
    - `docs/plans/cross-repo/README.md` if this repo is or may become a
      cross-repo orchestration root
    - `docs/live-workstream-status.md`
+   - `docs/temp/README.md`
    - `docs/proposals/README.md` if the repo keeps proposal logs
    - `docs/adr/pending/README.md` if the repo keeps pending ADRs
 6. Do not duplicate the canonical protocol docs outside `{{VENDOR_DIR}}/`.
@@ -54,6 +55,12 @@ Requirements:
      `docs/plans/cross-repo/`.
    - Do not use `cross-repo/` just because another repo is mentioned as
      background context.
+   - Put temporary markdown that is not meant to survive in `docs/temp/` first,
+     following `{{VENDOR_DIR}}/temp-doc-protocol.md`.
+   - Use a stable feature slug across branches, worktrees, and temp docs when
+     the workstream has a clear center, for example
+     `feature/<feature-slug>/<slice>-YYYY-MM-DD` and
+     `docs/temp/<feature-slug>/<topic>-YYYY-MM-DD.md`.
 8. Run the narrowest validation needed for the repo plus the package checks that
    apply:
    - `python3 {{VENDOR_DIR}}/scripts/check_gated_plan.py ...`
@@ -64,6 +71,7 @@ Requirements:
    - what was verified
    - whether the plan placement is local or `cross-repo`
    - whether this repo is the orchestration root or a standalone sibling repo
+   - whether temporary docs were promoted, preserved, or deleted
    - any linked repos or assistant entrypoints that still need human input
 
 Keep the repo-specific overlay thin. If you discover a generic improvement to

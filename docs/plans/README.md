@@ -21,3 +21,4 @@ Related protocol docs:
 
 - [Substantive work protocol](../../substantive-work-protocol.md)
 - [Proposal protocol](../../proposal-protocol.md)
+- [Temp doc protocol](../../temp-doc-protocol.md)

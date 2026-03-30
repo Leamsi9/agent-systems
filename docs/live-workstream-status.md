@@ -23,12 +23,12 @@ Refresh this ledger with:
 
 This section is generated from live git and worktree state by the agent-protocols workstream script.
 
-_Last generated: 2026-03-29T17:19:20.116765+00:00_
+_Last generated: 2026-03-30T07:53:08.378148+00:00_
 
 ### Summary
 | Repo | Main | Non-main branches | Attached worktrees | Dirty worktrees |
 | --- | --- | --- | --- | --- |
-| agent-protocols | main | 2 | 1 | 1 |
+| agent-protocols | main | 1 | 2 | 1 |
 
 ### Active, Promotable, And Diverged Branches
 None.
@@ -36,8 +36,7 @@ None.
 ### Historical And Merged-Stale Branches
 | Repo | Branch | Class | Worktree | State | Ahead | Behind | Plan |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| agent-protocols | feature/agent-protocols-rename-2026-03-29 | merged_stale | agent-protocols | dirty | - | - | - |
-| agent-protocols | feature/config-driven-adoption-2026-03-29 | merged_stale | - | clean | - | - | - |
+| agent-protocols | feature/agent-protocols/temp-doc-governance-2026-03-30 | merged_stale | agent-protocols-temp-doc-governance | dirty | - | - | [agent-protocols-temp-doc-governance-2026-03-30.md](/home/ismael/Github/.worktrees/agent-protocols-temp-doc-governance/docs/plans/cross-repo/feature/agent-protocols-temp-doc-governance-2026-03-30.md) |
 
 ### Pending Proposals Without Live Branches
 None.

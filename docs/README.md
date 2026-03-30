@@ -8,6 +8,7 @@ It is intentionally small:
 - one plans landing page
 - one plans index
 - one live workstream ledger
+- one temp-doc landing page
 - one example plan family
 - empty status buckets for proposal plans and proposal logs
 

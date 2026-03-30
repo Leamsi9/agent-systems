@@ -104,7 +104,16 @@ If one repo or product owns the canonical plan, other repos should point back
 to it and add thin local notes only when they genuinely need companion
 guidance.
 
-### 7. Placement heuristic for local versus cross-repo plans
+### 7. Temporary docs go in `docs/temp/` first
+
+If a markdown note is useful during execution but is not one of the durable
+artifacts required by this protocol, create it under `docs/temp/` and follow
+the [Temp doc protocol](temp-doc-protocol.md).
+
+Before closing the workstream, review the temp docs, preserve any durable
+content in the appropriate long-lived surface, and then delete the temp docs.
+
+### 8. Placement heuristic for local versus cross-repo plans
 
 Use the default local taxonomy when one repo can own implementation,
 validation, and acceptance.
@@ -168,6 +177,30 @@ For substantive work, follow this loop every time:
 8. Re-run the phase checker.
 9. Advance only when the phase is green.
 10. Merge only after acceptance and final-green closure.
+
+## Naming And Namespace Conventions
+
+Use one stable feature or initiative slug across branches, worktrees, plan
+basenames, and temp docs when the workstream has a clear center of gravity.
+
+Recommended patterns:
+
+- branches:
+  - `feature/<feature-slug>/<slice>-YYYY-MM-DD`
+  - `docs/<feature-slug>/<slice>-YYYY-MM-DD`
+- worktree directories:
+  - `<repo>-<feature-slug>-<slice>`
+- temp docs:
+  - `docs/temp/<feature-slug>/<topic>-YYYY-MM-DD.md`
+
+Examples:
+
+- `feature/agent-protocols/temp-doc-governance-2026-03-30`
+- `docs/agent-protocols/temp-doc-governance-2026-03-30`
+- `docs/temp/agent-protocols/topology-clarification-2026-03-29.md`
+
+This reduces branch and worktree sprawl by making related slices visually
+group together instead of creating many flat one-off names.
 
 ## Current-State Ledger
 

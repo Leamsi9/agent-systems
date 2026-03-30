@@ -66,6 +66,14 @@ When a repo uses the default layout, keep explicit status buckets under
 Do not create duplicate proposal logs in both repos unless both repos have
 their own concrete owned targets.
 
+### Temporary proposal notes
+
+Scratch comparison notes, temporary review checklists, and other proposal
+working notes that are not yet durable should live under `docs/temp/` first.
+
+When they become durable, promote the relevant content into the proposal plan
+family, pending ADR, or proposal log and then delete the temp doc.
+
 ## Manifest Vs Proposal
 
 A manifest is a `.plan.toml` gate file for a plan family. It is not the same
@@ -135,6 +143,9 @@ A proposal log should record:
 
 If the proposal log uses an existing typed contract, keep using that contract
 instead of inventing a second one.
+
+Prefer namespaced basenames when a proposal belongs to a clear feature slug, for
+example `agent-protocols-temp-doc-governance-proposal-2026-03-30.md`.
 
 ## Lifecycle
 

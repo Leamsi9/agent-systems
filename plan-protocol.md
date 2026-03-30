@@ -31,6 +31,12 @@ At the root of `docs/plans/`, keep:
 
 Do not overload `README.md` with generated live state or full inventory detail.
 
+Outside `docs/plans/`, keep:
+
+- `docs/temp/README.md`
+  Landing page for temporary working docs governed by the
+  [Temp doc protocol](temp-doc-protocol.md).
+
 ## Default Taxonomy
 
 Use these stable subdirectories by default:
@@ -68,6 +74,10 @@ Each substantive workstream should usually include:
 Prefer matching basenames so the family is easy to scan in a folder, for
 example `example-workstream.md`, `example-workstream.plan.toml`, and
 `example-workstream-completion.md`.
+
+When a workstream belongs to a clear feature or initiative, prefer that slug in
+the basename so related artifacts cluster together in scans, for example
+`agent-protocols-temp-doc-governance-2026-03-30.md`.
 
 Proposal-only workstreams should also keep:
 
@@ -174,6 +184,9 @@ instead of moving it into `docs/history/`.
   Session-local plan tools are not durable repo artifacts unless someone
   explicitly writes them into a file.
 
+If a temporary note is worth writing into the repo but is not durable enough
+for `docs/plans/`, start it under `docs/temp/` instead.
+
 ## Cross-Repo Work
 
 One repo should own the canonical durable plan. Other repos may keep thin local
@@ -204,3 +217,6 @@ Promote a plan into `docs/plans/` only when:
 - the scope is durable enough to survive the current session
 - the plan either drives implementation directly or records an intentionally
   parked proposal
+
+Otherwise, keep the note in `docs/temp/` until it is either promoted or
+discarded.

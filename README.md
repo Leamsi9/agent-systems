@@ -71,6 +71,16 @@ After the installer runs:
 The installer copies the package into the target repo as `agent-protocols/`.
 The external clone is only the source used for vendoring.
 
+To refresh an existing install after pulling a newer upstream package:
+
+```bash
+cd /path/to/target-repo
+python3 ~/src/agent-protocols/scripts/install.py --yes
+```
+
+That refreshes the vendored package files and creates any newly introduced
+scaffold files that are still missing, such as `docs/temp/README.md`.
+
 ## Quick Start Patterns
 
 Use the pattern that matches how the repo is worked on:
@@ -109,6 +119,8 @@ different repo.
   Canonical workflow for proposal-only slices that stop before implementation.
 - `plan-protocol.md`
   Canonical conventions for a repo-local `docs/plans/` surface.
+- `temp-doc-protocol.md`
+  Canonical lifecycle for temporary working docs under `docs/temp/`.
 - `examples/gated-phase-manifest.example.toml`
   Reusable example manifest for gated mini-plans.
 - `scripts/check_gated_plan.py`
@@ -147,6 +159,8 @@ Installer behavior:
 - Use `--yes` for automation.
 - Use `--skip-workspace-discovery` when you want a strictly single-repo
   install.
+- The example plan family is only seeded when the target repo does not already
+  have a `docs/plans/` surface.
 
 ## Vendoring
 
@@ -161,7 +175,9 @@ To vendor this package into another repo:
    `docs/plans/plans-index.md` inventory.
 5. Keep live generated status in a repo-local ledger such as
    `docs/live-workstream-status.md`.
-6. Run the canonical scripts directly:
+6. Keep temporary working docs in `docs/temp/` and follow
+   `agent-protocols/temp-doc-protocol.md`.
+7. Run the canonical scripts directly:
    - `python3 agent-protocols/scripts/check_gated_plan.py path/to/work.plan.toml --phase phase_name`
    - `python3 agent-protocols/scripts/workstream.py sync-index --confirm`
    - `python3 agent-protocols/scripts/install.py`
@@ -196,9 +212,33 @@ normally keep:
   Proposal logs.
 - `docs/live-workstream-status.md`
   Script-owned current-state ledger.
+- `docs/temp/README.md`
+  Landing page for temporary working docs that should be reviewed and deleted
+  after preservation.
 - `docs/plans/cross-repo/README.md`
   Optional extension for repos that act as the canonical orchestration root for
   coordinated multi-repo work.
+
+## Naming Conventions
+
+Use one stable feature or initiative slug across git state and temporary docs
+when the workstream has a clear owner.
+
+Recommended patterns:
+
+- branches:
+  - `feature/<feature-slug>/<slice>-YYYY-MM-DD`
+  - `docs/<feature-slug>/<slice>-YYYY-MM-DD`
+- worktree directories:
+  - `<repo>-<feature-slug>-<slice>`
+- temp docs:
+  - `docs/temp/<feature-slug>/<topic>-YYYY-MM-DD.md`
+
+For durable plans and proposals, prefer the existing taxonomy first and use the
+feature slug in the filename rather than replacing the type or status folders.
+For example, prefer `docs/plans/feature/agent-protocols-temp-doc-governance-2026-03-30.md`
+over creating a new top-level `docs/plans/agent-protocols/` taxonomy by
+default.
 
 ## Recommended Topologies
 

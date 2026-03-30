@@ -22,6 +22,7 @@ VENDORED_FILES = [
     "substantive-work-protocol.md",
     "proposal-protocol.md",
     "plan-protocol.md",
+    "temp-doc-protocol.md",
 ]
 OPTIONAL_VENDORED_FILES = [
     "LICENSE-MIT",
@@ -514,6 +515,10 @@ Optional extension:
 
 - `cross-repo/` as an orchestrator-only extension for canonical plan families
   whose completion or acceptance depends on coordinated work across 2+ repos
+
+Temporary working docs belong in:
+
+- `docs/temp/`
 """
 
 
@@ -533,6 +538,29 @@ Another repo being mentioned as context does not make a plan cross-repo.
 
 If this repo is not acting as an orchestration root yet, keep this folder
 empty apart from this README.
+"""
+
+
+def temp_docs_readme() -> str:
+    return """# Temp Docs
+
+This folder holds temporary working markdown that should be reviewed and then
+deleted after the task is complete.
+
+Use it for scratch notes that do not yet belong in durable surfaces such as:
+
+- `docs/plans/`
+- `docs/proposals/`
+- `docs/adr/`
+- `docs/history/`
+
+Follow:
+
+- `agent-protocols/temp-doc-protocol.md`
+
+Recommended shape:
+
+- `docs/temp/<feature-slug>/<topic>-YYYY-MM-DD.md`
 """
 
 
@@ -660,6 +688,7 @@ def scaffold(
     vendor_dir: str,
 ) -> None:
     target.mkdir(parents=True, exist_ok=True)
+    seed_example_plan = not (target / "docs/plans").exists()
     copy_package(package_root(), target, vendor_dir)
     write_if_missing(
         target / "agent-protocols.toml",
@@ -672,6 +701,7 @@ def scaffold(
         "docs/plans/sync",
         "docs/plans/archive",
         "docs/plans/cross-repo",
+        "docs/temp",
         "docs/plans/proposals/active",
         "docs/plans/proposals/pending",
         "docs/plans/proposals/blocked",
@@ -701,23 +731,26 @@ def scaffold(
     write_if_missing(target / "docs/plans/README.md", plans_readme())
     write_if_missing(target / "docs/plans/plans-index.md", plans_index())
     write_if_missing(target / "docs/plans/cross-repo/README.md", cross_repo_readme())
+    write_if_missing(target / "docs/temp/README.md", temp_docs_readme())
     write_if_missing(target / DEFAULT_LEDGER_PATH, live_ledger())
     write_if_missing(target / "docs/proposals/README.md", proposals_readme())
     write_if_missing(target / "docs/adr/pending/README.md", pending_adr_readme())
-    write_if_missing(target / "docs/plans/feature/example-workstream.md", example_plan())
-    write_if_missing(
-        target / "docs/plans/feature/example-workstream.plan.toml",
-        example_manifest(),
-    )
-    write_if_missing(
-        target / "docs/plans/feature/example-workstream-completion.md",
-        example_completion(),
-    )
+    if seed_example_plan:
+        write_if_missing(target / "docs/plans/feature/example-workstream.md", example_plan())
+        write_if_missing(
+            target / "docs/plans/feature/example-workstream.plan.toml",
+            example_manifest(),
+        )
+        write_if_missing(
+            target / "docs/plans/feature/example-workstream-completion.md",
+            example_completion(),
+        )
 
 
 def print_assistant_snippets() -> None:
     snippet = (
         "For substantive work, follow `agent-protocols/substantive-work-protocol.md`.\n"
+        "Use `docs/temp/` for temporary working docs per `agent-protocols/temp-doc-protocol.md`.\n"
         "Repo topology and linked repos are declared in `agent-protocols.toml`.\n"
     )
     print("AGENTS.md / CLAUDE.md snippet:\n")

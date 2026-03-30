@@ -15,6 +15,8 @@ Recommended approach:
    `agent-protocols/substantive-work-protocol.md`
 4. keep repo-specific landing pages, ledgers, ADRs, and proposal logs outside
    the vendored package
+5. keep temporary working markdown under `docs/temp/` and follow
+   `agent-protocols/temp-doc-protocol.md`
 
 Do not fork the protocol docs into separate copies for each assistant.
 
@@ -35,6 +37,7 @@ Use a short pointer such as:
 
 ```md
 For substantive work, follow `agent-protocols/substantive-work-protocol.md`.
+Use `docs/temp/` for temporary working docs per `agent-protocols/temp-doc-protocol.md`.
 Repo topology and linked repos are declared in `agent-protocols.toml`.
 ```
 
@@ -105,6 +108,8 @@ cross-repo workstreams and live status.
 - Run the installer from that root repo when setting up cross-repo authority.
 - That root repo should keep coordinated multi-repo plan families under
   `docs/plans/cross-repo/`.
+- Temporary cross-repo scratch notes should still start in `docs/temp/` and be
+  promoted only if they become durable artifacts.
 - Sibling repos that are also worked on independently should vendor their own
   `agent-protocols/` copy too.
 - Those sibling local installs should normally use `--skip-workspace-discovery`.

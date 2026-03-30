@@ -12,7 +12,8 @@ Recommended flow:
 1. publish and tag releases in `https://github.com/Leamsi9/agent-protocols`
 2. vendor the package into consumer repos as `agent-protocols/`
 3. keep a `VERSION` file inside the vendored copy
-4. update consumers by copying a tagged release or by pulling a subtree update
+4. update consumers by copying a tagged release, pulling a subtree update, or
+   rerunning `scripts/install.py` from an updated external checkout
 
 The package is intentionally staying on `0.0.x` until the config contract and
 Leam adoption are proven stable.
@@ -37,6 +38,19 @@ surface.
 - manual copy with version bump
   Acceptable for smaller repos, but only if the `VERSION` file is updated and
   the sync source is recorded in the consuming repo.
+
+## Installer Refresh Path
+
+When a consumer repo already has a vendored copy, the lightest refresh path is:
+
+```bash
+cd /path/to/consumer-repo
+python3 /path/to/external/agent-protocols/scripts/install.py --yes
+```
+
+That refreshes the vendored package files and fills in newly added missing
+scaffold files without requiring a nested package clone inside the consumer
+repo.
 
 ## Minimal Consumer Contract
 
