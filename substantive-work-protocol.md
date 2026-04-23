@@ -26,24 +26,37 @@ work, use this protocol unless there is a very good reason not to.
 ## Core Rules
 
 1. Every new feature, functionality change, or fix starts on its own branch.
-2. The branch should start from the repo’s primary integration branch.
-   The examples in this package assume `main`; if the repo uses another trunk
-   branch, record that explicitly in the plan and the checks.
-3. If the work spans repos, create a matching branch pair and keep each repo in
+2. Keep the integration branch worktree clean and up to date with origin before
+   creating the branch. The examples in this package assume `main`; if the repo
+   uses another trunk branch, record that explicitly in the plan and the
+   checks.
+3. Every substantive branch should have its own dedicated worktree. Do not
+   implement multiple active substantive streams in the same checkout.
+4. If the work spans repos, create a matching branch pair and keep each repo in
    its own worktree.
-4. Break the work into an ordered sequence of gated mini-plans instead of one
+5. Break the work into an ordered sequence of gated mini-plans instead of one
    giant plan.
-5. Only one phase may be actively implemented at a time.
-6. Do not advance until the current phase exit gate passes.
-7. Do not call work complete from narrative judgement alone. Completion must be
+6. Only one phase may be actively implemented at a time.
+7. Do not advance until the current phase exit gate passes.
+8. Do not call work complete from narrative judgement alone. Completion must be
    backed by the phase checker and the documented gate.
-8. Merge to the repo’s primary integration branch only after acceptance and
+9. Merge to the repo’s primary integration branch only after acceptance and
    final-green closure.
-9. Treat live git and worktree state as authoritative. Durable docs should
+10. Treat live git and worktree state as authoritative. Durable docs should
    mirror that state, not override it.
-10. Proposal-only slices still need durable artifacts. Use the proposal
+11. Proposal-only slices still need durable artifacts. Use the proposal
     protocol so pending ADRs, proposal logs, and completion traces stay
     predictable.
+
+## Lifecycle States
+
+Use these meanings consistently:
+
+- Pending means proposal artifacts are ready on `main`, but substantive implementation has not begun.
+- Active means substantive implementation has begun and is not yet complete.
+- Completed implementation means the work landed on `main`, so the proposal is no longer active.
+- Discarded or superseded means the outcome was captured durably and the live
+  branch or worktree should be removed instead of lingering as ambiguous truth.
 
 ## Canonical Artifact Set
 
@@ -167,16 +180,73 @@ is usually too weak.
 
 For substantive work, follow this loop every time:
 
-1. Create a dedicated branch from the repo’s integration baseline.
-2. If the change spans repos, create a matching branch worktree in each repo.
-3. Create or refresh the durable plan and the `.plan.toml` manifest.
-4. Load only the current phase, the relevant code, and the required ledgers.
-5. Implement only the current phase.
-6. Run the phase checker against the current phase.
-7. Update docs, completion logs, and mirrors required by that phase.
-8. Re-run the phase checker.
-9. Advance only when the phase is green.
-10. Merge only after acceptance and final-green closure.
+1. Start from a clean integration worktree on the repo’s primary integration
+   branch and sync it with origin when the repo policy expects that.
+2. Create a dedicated branch from that clean integration baseline.
+3. Create a dedicated worktree for the branch instead of implementing in the
+   integration checkout.
+4. If the change spans repos, create a matching branch worktree in each repo.
+5. Create or refresh the durable plan and the `.plan.toml` manifest.
+6. Load only the current phase, the relevant code, and the required ledgers.
+7. Implement only the current phase.
+8. Run the phase checker against the current phase.
+9. Update docs, completion logs, mirrors, and any published maps required by
+   that phase.
+10. Re-run the phase checker.
+11. Advance only when the phase is green.
+12. Merge only after acceptance and final-green closure.
+
+## Clean Git Closeout
+
+When the operator asks to "clean git", do not treat that as generic pruning.
+Treat it as a reconciliation pass that must end every non-main branch in one of
+these dispositions:
+
+1. merge to `main`, push, then remove the related branch and worktree
+2. promote pending proposal artifacts onto `main` without leaving a live
+   implementation branch behind
+3. keep the branch active because substantive implementation is still in
+   progress
+4. discard or supersede the branch after recording the decision durably
+
+Use the reconciliation inventory first:
+
+```bash
+python3 agent-protocols/scripts/workstream.py reconcile --json
+```
+
+The reconciliation output should compare every live branch and dirty worktree
+against `main`, summarize the remaining path-level deltas, and recommend which
+disposition each stream should take.
+
+Completed or proposal-ready work should be promoted into `main` rather than
+left on side branches. Historical or safety refs should remain exceptional and
+explicitly named as preserved history, not as default residue from ordinary
+closeout.
+
+A clean closeout should leave the integration worktree back on a clean
+`main`, with obsolete branch worktrees removed instead of lingering as
+ambiguous truth.
+
+Once the branch result is committed on `origin/main` and the remote checkpoint
+exists, delete the local branch and remove its dedicated worktree unless there
+is an explicit reason to preserve them.
+
+If follow-up work is needed later, create a new branch from `main` or from the
+relevant merge commit instead of treating the old implementation branch as
+durable infrastructure.
+
+## Map Refresh At Closeout
+
+If a substantive workstream changes any surface described by the published
+maps, update the published system, documentation, and test-coverage maps before
+calling the workstream accepted or complete.
+
+That usually means the repo-local `docs/system-map.md`,
+`docs/documentation-map.md`, and `docs/test-coverage-map.md`, plus any relevant
+`docs/cross-repo/*` or sibling product-map variants.
+
+Do not churn the maps for work that clearly does not change any mapped surface.
 
 ## Naming And Namespace Conventions
 
@@ -217,6 +287,10 @@ Pending proposals should appear there as pending proposals. Branchless plan
 manifests should appear as branchless plan manifests: manifest-backed plan
 families whose recorded branch is not currently present locally, but which are
 not automatically proposals.
+
+Active implementation work should appear as live branches. Completed
+implementation should stop being represented as a live workstream once the
+branch cleanup is finished.
 
 ## Archive And History
 
@@ -289,10 +363,16 @@ This rule is mandatory for substantive work:
 
 - do not continue new implementation on whatever branch happened to be checked
   out when the request arrived
+- do not treat a dirty `main` worktree as the normal staging ground for new
+  implementation
 - create a fresh dedicated branch for the new workstream
+- keep the integration branch worktree clean and reasonably up to date with the
+  remote integration branch
+- create a dedicated worktree for that branch instead of reusing a checkout
+  that already mixes multiple streams
 - if the work spans repos, create a matching branch pair
-- keep a stable integration worktree available for bootstrap paths and merge
-  targets
+- keep a stable integration worktree available for bootstrap paths, pulls,
+  merges, pushes, and reconciliation
 
 Planning-system changes are not exempt.
 
@@ -304,6 +384,12 @@ The intended lifecycle is:
 2. implement behind gated phases
 3. accept the work
 4. merge back to the integration baseline
+5. push the promoted result until the branch outcome is present on `origin/main`
+   when the repo policy expects a remote checkpoint
+6. once the promoted result is on `origin/main`, remove the branch worktree and
+   delete the local branch unless it is explicitly preserved
+7. if future work is needed, branch again from `main` or from the merge commit
+   instead of reviving the old implementation branch
 
 If a workstream is parked, superseded, or intentionally left partial, record
 that in the durable plan instead of silently leaving the branch as ambiguous

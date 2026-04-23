@@ -1,6 +1,6 @@
 # Agent Protocols
 
-Experimental package version: `0.0.1`
+Experimental package version: `0.0.3`
 
 This package is a reusable, repo-agnostic protocol kit for agent-driven
 planning, proposal capture, phase gates, and live workstream auditing.
@@ -55,7 +55,13 @@ python3 ~/src/agent-protocols/scripts/install.py --yes --include-discovered-repo
 Best-practice defaults:
 
 - keep one external checkout such as `~/src/agent-protocols`
+- keep one clean integration worktree on `main`
 - `cd` into the repo you want to scaffold before running the installer
+- create a fresh branch-owned worktree for each substantive stream
+- do pulls, merges, pushes, and reconciliation from the clean integration
+  worktree rather than from an implementation worktree
+- once a stream is fully merged into `origin/main`, delete the local branch and
+  remove its dedicated worktree unless it is explicitly preserved
 - use the orchestration repo for cross-repo installs
 - use `--skip-workspace-discovery` when adopting the package into a sibling repo
   that should stay standalone
@@ -126,7 +132,13 @@ different repo.
 - `scripts/check_gated_plan.py`
   Canonical phase-checker implementation.
 - `scripts/workstream.py`
-  Canonical live-workstream audit and status-ledger sync script.
+  Canonical live-workstream audit, clean-git reconciliation, and status-ledger
+  sync script.
+
+When an operator asks to "clean git", use the reconciliation inventory first
+instead of pruning branches blindly:
+
+- `python3 agent-protocols/scripts/workstream.py reconcile --json`
 - `scripts/install.py`
   Bootstrap installer that vendors the package and scaffolds repo-local config
   and docs.
@@ -137,6 +149,7 @@ The public package repo ships a small example `docs/` skeleton so you can
 validate the package in isolation:
 
 - `python3 scripts/check_gated_plan.py docs/plans/feature/example-workstream.plan.toml --phase acceptance`
+- `python3 scripts/workstream.py reconcile --json`
 - `python3 scripts/workstream.py sync-index --confirm`
 
 To vendor the package into a repo and scaffold the repo-local layout:
@@ -179,6 +192,7 @@ To vendor this package into another repo:
    `agent-protocols/temp-doc-protocol.md`.
 7. Run the canonical scripts directly:
    - `python3 agent-protocols/scripts/check_gated_plan.py path/to/work.plan.toml --phase phase_name`
+   - `python3 agent-protocols/scripts/workstream.py reconcile --json`
    - `python3 agent-protocols/scripts/workstream.py sync-index --confirm`
    - `python3 agent-protocols/scripts/install.py`
 
