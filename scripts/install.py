@@ -551,9 +551,9 @@ deleted after the task is complete.
 Use it for scratch notes that do not yet belong in durable surfaces such as:
 
 - `docs/plans/`
-- `docs/proposals/`
 - `docs/adr/`
 - `docs/history/`
+- repo-owned proposal logs, when the repo keeps them
 
 Follow:
 
@@ -569,8 +569,9 @@ def live_ledger() -> str:
     return """# Live Workstream Status
 
 This ledger is the repo-local mutable current-state surface for active
-workstreams, preserved pending proposals, and other manifest-backed plan
-families.
+workstreams, manifest-backed pending proposals, and other manifest-backed plan
+families. Compact proposal records without manifests remain valid durable docs
+but may not appear in this generated ledger.
 
 ## Definitions
 
@@ -592,21 +593,6 @@ Template placeholder.
 """
 
 
-def proposals_readme() -> str:
-    return """# Proposal Logs
-
-This folder is the default proposal-log surface for repos that adopt the
-proposal protocol.
-"""
-
-
-def pending_adr_readme() -> str:
-    return """# Pending ADRs
-
-This folder stores proposal-stage ADRs that are not accepted yet.
-"""
-
-
 def example_plan() -> str:
     return """# Example Workstream
 
@@ -623,7 +609,6 @@ def example_plan() -> str:
 def example_manifest() -> str:
     return """title = "Example workstream"
 root_dir = "../../.."
-completion_ledger = "docs/plans/feature/example-workstream-completion.md"
 phase_order = ["setup", "acceptance"]
 
 [phases.setup]
@@ -638,11 +623,6 @@ path = "docs/plans/feature/example-workstream.md"
 id = "manifest-exists"
 type = "path_exists"
 path = "docs/plans/feature/example-workstream.plan.toml"
-
-[[phases.setup.checks]]
-id = "completion-log-exists"
-type = "path_exists"
-path = "docs/plans/feature/example-workstream-completion.md"
 
 [phases.acceptance]
 summary = "Validate the example repo skeleton."
@@ -672,15 +652,6 @@ command = "python3 -m py_compile agent-protocols/scripts/check_gated_plan.py age
 """
 
 
-def example_completion() -> str:
-    return """# Example Workstream Completion Log
-
-- Date: 2026-03-29
-- Status: template
-- Branch: none (template example)
-"""
-
-
 def scaffold(
     target: Path,
     repo_id: str,
@@ -703,16 +674,7 @@ def scaffold(
         "docs/plans/archive",
         "docs/plans/cross-repo",
         "docs/temp",
-        "docs/plans/proposals/active",
-        "docs/plans/proposals/pending",
-        "docs/plans/proposals/blocked",
-        "docs/plans/proposals/in-progress",
-        "docs/proposals/active",
-        "docs/proposals/pending",
-        "docs/proposals/blocked",
-        "docs/proposals/in-progress",
-        "docs/proposals/archive",
-        "docs/adr/pending",
+        "docs/plans/proposals",
     ]:
         (target / relative).mkdir(parents=True, exist_ok=True)
 
@@ -722,10 +684,7 @@ def scaffold(
             "docs/plans/cross-repo/hotfix",
             "docs/plans/cross-repo/sync",
             "docs/plans/cross-repo/archive",
-            "docs/plans/cross-repo/proposals/active",
-            "docs/plans/cross-repo/proposals/pending",
-            "docs/plans/cross-repo/proposals/blocked",
-            "docs/plans/cross-repo/proposals/in-progress",
+            "docs/plans/cross-repo/proposals",
         ]:
             (target / relative).mkdir(parents=True, exist_ok=True)
 
@@ -734,17 +693,11 @@ def scaffold(
     write_if_missing(target / "docs/plans/cross-repo/README.md", cross_repo_readme())
     write_if_missing(target / "docs/temp/README.md", temp_docs_readme())
     write_if_missing(target / DEFAULT_LEDGER_PATH, live_ledger())
-    write_if_missing(target / "docs/proposals/README.md", proposals_readme())
-    write_if_missing(target / "docs/adr/pending/README.md", pending_adr_readme())
     if seed_example_plan:
         write_if_missing(target / "docs/plans/feature/example-workstream.md", example_plan())
         write_if_missing(
             target / "docs/plans/feature/example-workstream.plan.toml",
             example_manifest(),
-        )
-        write_if_missing(
-            target / "docs/plans/feature/example-workstream-completion.md",
-            example_completion(),
         )
 
 

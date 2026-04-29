@@ -41,13 +41,13 @@ Requirements:
      cross-repo orchestration root
    - `docs/live-workstream-status.md`
    - `docs/temp/README.md`
-   - `docs/proposals/README.md` if the repo keeps proposal logs
+   - `docs/proposals/README.md` only if the repo keeps proposal logs
    - `docs/adr/pending/README.md` if the repo keeps pending ADRs
 6. Do not duplicate the canonical protocol docs outside `{{VENDOR_DIR}}/`.
    Repo-local docs should point back to the vendored package instead.
 7. If the change is substantive, follow `{{VENDOR_DIR}}/substantive-work-protocol.md`:
-   create a durable plan family, keep phases gated, and do not claim completion
-   without the checker passing.
+   create the smallest durable plan family that proves the work, keep phases
+   gated, and do not claim completion without the checker passing.
    - If the work is local to this repo, place the plan in the default
      `docs/plans/` taxonomy.
    - If completion or acceptance depends on coordinated work across 2+ repos
@@ -57,6 +57,9 @@ Requirements:
      background context.
    - Put temporary markdown that is not meant to survive in `docs/temp/` first,
      following `{{VENDOR_DIR}}/temp-doc-protocol.md`.
+   - Delete temporary ledgers, inventories, and draft manifests at closeout
+     after folding any durable evidence into the plan, ADR, history note, or
+     commit message.
    - Use a stable feature slug across branches, worktrees, and temp docs when
      the workstream has a clear center, for example
      `feature/<feature-slug>/<slice>-YYYY-MM-DD` and

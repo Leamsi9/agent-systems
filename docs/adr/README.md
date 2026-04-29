@@ -2,4 +2,5 @@
 
 Accepted ADRs live here.
 
-Pending proposal-stage ADRs belong under `docs/adr/pending/`.
+Create `docs/adr/pending/` only when the repo keeps pending ADRs for
+architecture decisions that are not ready to accept.

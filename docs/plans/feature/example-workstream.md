@@ -19,7 +19,7 @@ real product history in the package repo.
 
 - Goal: ensure the example plan family is present.
 - Exit gate:
-  - the example plan, manifest, and completion log all exist
+  - the example plan and manifest exist
 
 ### Phase `acceptance`
 

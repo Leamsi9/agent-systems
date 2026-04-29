@@ -10,6 +10,6 @@ It is intentionally small:
 - one live workstream ledger
 - one temp-doc landing page
 - one example plan family
-- empty status buckets for proposal plans and proposal logs
+- one compact proposal-plan folder
 
 Use it as a starting point, not as a second canonical protocol layer.

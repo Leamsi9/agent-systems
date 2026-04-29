@@ -7,8 +7,8 @@ Use it for any non-trivial feature, fix, refactor, migration, or cross-repo
 change.
 
 If the workstream is intentionally proposal-only and stops before
-implementation, pair this protocol with the
-[Proposal protocol](proposal-protocol.md).
+implementation, use the [Proposal protocol](proposal-protocol.md). Proposal
+capture does not automatically require the full substantive artifact set.
 
 ## When To Use This
 
@@ -45,19 +45,38 @@ use this protocol unless there is a very good reason not to.
    final-green closure.
 10. Treat live git and worktree state as authoritative. Durable docs should
    mirror that state, not override it.
-11. Proposal-only slices still need durable artifacts. Use the proposal
-    protocol so pending ADRs, proposal logs, and completion traces stay
-    predictable.
+11. Proposal-only slices need only the durable artifacts that will still be
+    useful after review. Use the proposal protocol to decide what survives,
+    and keep temporary ledgers or inventories disposable by default.
 
 ## Lifecycle States
 
 Use these meanings consistently:
 
-- Pending means proposal artifacts are ready on `main`, but substantive implementation has not begun.
+- Pending means a proposal record is ready on `main`, but substantive implementation has not begun.
 - Active means substantive implementation has begun and is not yet complete.
 - Completed implementation means the work landed on `main`, so the proposal is no longer active.
 - Discarded or superseded means the outcome was captured durably and the live
   branch or worktree should be removed instead of lingering as ambiguous truth.
+
+## Artifact Economy
+
+Substantive work should preserve the smallest durable artifact set that proves
+the work can be reviewed, resumed, or rolled back.
+
+The normal durable minimum is:
+
+- one concise plan
+- one machine-checkable manifest while phases are active
+
+Add a completion log, companion notes, proposal logs, pending ADRs, or mirrors
+only when they carry information that is not already clear from the plan,
+commit history, tests, or final review notes.
+
+Temporary ledgers, inventories, tracking manifests, and scratch notes should
+start in `docs/temp/` or another repo-approved temporary location. At closeout,
+fold any lasting evidence into the plan, ADR, history note, or commit message,
+then delete the temporary files.
 
 ## Canonical Artifact Set
 
@@ -91,11 +110,14 @@ automatically a proposal.
 The manifest is the fail-closed source of truth for whether a phase is actually
 done.
 
-### 3. Completion log
+### 3. Optional completion log
 
-Store an append-only completion log next to the plan and manifest.
+Use an append-only completion log when the evidence is too detailed or
+multi-stage to live cleanly in the plan or final review notes. For small
+substantive slices, a short closeout section in the plan or commit can be
+enough.
 
-The completion log should capture:
+A completion log, when used, should capture:
 
 - phase evidence that actually passed
 - important SHAs, merges, pushes, and cleanup actions
@@ -104,8 +126,8 @@ The completion log should capture:
 ### 4. Proposal protocol when implementation is intentionally deferred
 
 If the workstream stops at a durable proposal rather than implementation,
-follow the [Proposal protocol](proposal-protocol.md) for pending ADR and
-proposal-log rules in addition to this protocol.
+follow the [Proposal protocol](proposal-protocol.md) for right-sized durable
+capture instead of creating a full implementation artifact bundle.
 
 ### 5. Optional per-phase notes
 
@@ -191,8 +213,8 @@ For substantive work, follow this loop every time:
 6. Load only the current phase, the relevant code, and the required ledgers.
 7. Implement only the current phase.
 8. Run the phase checker against the current phase.
-9. Update docs, completion logs, mirrors, and any published maps required by
-   that phase.
+9. Update required docs, optional completion logs, mirrors, and any published
+   maps required by that phase.
 10. Re-run the phase checker.
 11. Advance only when the phase is green.
 12. Merge only after acceptance and final-green closure.

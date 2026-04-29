@@ -1,9 +1,10 @@
 # Agent Protocols
 
-Experimental package version: `0.0.4`
+Experimental package version: `0.0.5`
 
 This package is a reusable, repo-agnostic protocol kit for agent-driven
-planning, proposal capture, phase gates, and live workstream auditing.
+planning, right-sized proposal capture, phase gates, and live workstream
+auditing.
 
 It is designed to work in either of these shapes:
 
@@ -125,7 +126,9 @@ different repo.
   Lightweight workflow for tiny, single-slice changes that do not warrant the
   substantive protocol.
 - `proposal-protocol.md`
-  Canonical workflow for proposal-only slices that stop before implementation.
+  Canonical workflow for proposal-only slices that stop before implementation,
+  with one compact durable record by default and extra artifacts only when
+  they add review value.
 - `plan-protocol.md`
   Canonical conventions for a repo-local `docs/plans/` surface.
 - `temp-doc-protocol.md`
@@ -223,10 +226,8 @@ normally keep:
   Short landing page describing what lives in the plans folder.
 - `docs/plans/plans-index.md`
   Durable plan inventory and taxonomy index.
-- `docs/plans/proposals/{active,pending,blocked,in-progress}/`
-  Proposal-only plan families.
-- `docs/proposals/{active,pending,blocked,in-progress,archive}/`
-  Proposal logs.
+- `docs/plans/proposals/`
+  Compact proposal-only records when a proposal genuinely needs to survive.
 - `docs/live-workstream-status.md`
   Script-owned current-state ledger.
 - `docs/temp/README.md`
@@ -235,6 +236,10 @@ normally keep:
 - `docs/plans/cross-repo/README.md`
   Optional extension for repos that act as the canonical orchestration root for
   coordinated multi-repo work.
+
+Repos that keep pending ADRs or proposal logs may also add thin repo-local
+landing pages such as `docs/adr/pending/README.md` or
+`docs/proposals/README.md`, but those are no longer default scaffolding.
 
 ## Naming Conventions
 

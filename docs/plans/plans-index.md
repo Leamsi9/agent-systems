@@ -22,16 +22,19 @@ Use these stable subdirectories:
 - `cross-repo/` as an orchestrator-only extension for canonical plan families
   whose completion or acceptance depends on coordinated work across 2+ repos
 
-Within `docs/plans/proposals/`, use explicit status buckets:
+Within `docs/plans/proposals/`, use explicit status buckets when helpful:
 
 - `active/`
 - `pending/`
 - `blocked/`
 - `in-progress/`
 
+Those buckets are optional. Compact proposal records can also live directly
+under `docs/plans/proposals/` when status folders would add noise.
+
 A `.plan.toml` manifest is a phase-gate artifact paired with a durable plan. It
-is not the same thing as a proposal log. Proposal logs live under
-`docs/proposals/`.
+is not the same thing as a proposal log. Proposal logs are optional repo-owned
+surfaces, not required companions for every proposal.
 
 ## Durable Plan Surfaces
 
@@ -47,15 +50,7 @@ is not the same thing as a proposal log. Proposal logs live under
 
 None.
 
-### `proposals/active`
-
-None.
-
-### `proposals/pending`
-
-None.
-
-### `proposals/blocked`
+### `proposals/`
 
 None.
 

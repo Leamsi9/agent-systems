@@ -13,8 +13,8 @@ Recommended approach:
 2. keep repo topology in a repo-local `agent-protocols.toml`
 3. point assistant instruction files at
    `agent-protocols/substantive-work-protocol.md`
-4. keep repo-specific landing pages, ledgers, ADRs, and proposal logs outside
-   the vendored package
+4. keep repo-specific landing pages, ledgers, ADRs, and any proposal logs
+   outside the vendored package
 5. keep temporary working markdown under `docs/temp/` and follow
    `agent-protocols/temp-doc-protocol.md`
 

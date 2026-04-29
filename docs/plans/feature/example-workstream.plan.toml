@@ -1,6 +1,5 @@
 title = "Example workstream"
 root_dir = "../../.."
-completion_ledger = "docs/plans/feature/example-workstream-completion.md"
 phase_order = ["setup", "acceptance"]
 
 [phases.setup]
@@ -15,11 +14,6 @@ path = "docs/plans/feature/example-workstream.md"
 id = "manifest-exists"
 type = "path_exists"
 path = "docs/plans/feature/example-workstream.plan.toml"
-
-[[phases.setup.checks]]
-id = "completion-log-exists"
-type = "path_exists"
-path = "docs/plans/feature/example-workstream-completion.md"
 
 [phases.acceptance]
 summary = "Validate the example repo skeleton."

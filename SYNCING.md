@@ -61,7 +61,7 @@ Each consumer should document:
 - the local owner of repo-specific overlays outside the package
 
 Keep reusable protocol content in the package. Keep repo-specific landing
-pages, ledgers, ADRs, and proposal logs in the consuming repo.
+pages, ledgers, ADRs, and any proposal logs in the consuming repo.
 
 ## Upstream First For Generic Changes
 

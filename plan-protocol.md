@@ -16,9 +16,10 @@ session-local planning tool. They appear here only when a maintainer or coding
 agent intentionally writes a planning document into the repo.
 
 For non-trivial features, fixes, refactors, and cross-repo work, follow the
-[Substantive work protocol](substantive-work-protocol.md) and, when the slice
-is intentionally proposal-only, the
-[Proposal protocol](proposal-protocol.md).
+[Substantive work protocol](substantive-work-protocol.md). When the slice is
+intentionally proposal-only, follow the
+[Proposal protocol](proposal-protocol.md) and keep the durable proposal record
+as small as the decision allows.
 
 ## Root Docs
 
@@ -52,12 +53,16 @@ Optional extension for orchestration repos:
 - `cross-repo/` for canonical plan families whose completion or acceptance
   depends on coordinated work across 2+ repos
 
-Within `docs/plans/proposals/`, use explicit status buckets:
+Within `docs/plans/proposals/`, use explicit status buckets when helpful:
 
 - `active/`
 - `pending/`
 - `blocked/`
 - `in-progress/`
+
+Those proposal status buckets are optional. Use them when they clarify a
+larger proposal set; otherwise keep compact proposal records directly under
+`docs/plans/proposals/`.
 
 Do not leave new durable plan files at the root of `docs/plans/` when one of
 the stable subdirectories fits.
@@ -68,23 +73,28 @@ Each substantive workstream should usually include:
 
 - one durable markdown plan
 - one adjacent `.plan.toml` manifest for machine-checkable phase gates
-- one append-only completion log
+- one append-only completion log only when the evidence does not fit cleanly
+  in the plan or final review notes
 - optional phase notes only when the work is too large for one concise plan doc
 
 Prefer matching basenames so the family is easy to scan in a folder, for
-example `example-workstream.md`, `example-workstream.plan.toml`, and
-`example-workstream-completion.md`.
+example `example-workstream.md` and `example-workstream.plan.toml`; add
+`example-workstream-completion.md` only when a separate completion log is
+useful.
 
 When a workstream belongs to a clear feature or initiative, prefer that slug in
 the basename so related artifacts cluster together in scans, for example
 `agent-protocols-temp-doc-governance-2026-03-30.md`.
 
-Proposal-only workstreams should also keep:
+Proposal-only workstreams should keep one compact durable proposal record.
+They may also keep:
 
 - one pending ADR in `docs/adr/pending/` when the slice preserves a durable
   architecture direction that is not yet accepted
 - one proposal log in the owning repo when the slice records a concrete pending
   change rather than implementation work
+- one adjacent `.plan.toml` manifest when gated capture or generated live-status
+  visibility is worth the extra file
 
 Every new durable plan should record, near the top of the file:
 
@@ -98,18 +108,22 @@ Every new durable plan should record, near the top of the file:
 Proposal-only plan families should also record:
 
 - `Proposal state`
-- the proposal-log path or an explicit ownership note
-- the pending ADR path when one exists
+- the proposal-log path only when one exists
+- the pending ADR path only when one exists
 
-The durable plan should also record:
+For substantive gated work, the durable plan should also record:
 
 - the goal
 - the ordered gated phases
 - the write scope
 - the validation and exit gates
 
-The manifest is the fail-closed oracle for whether a phase is done. Do not mark
-a phase complete from narrative judgement alone.
+For compact proposal records, record the proposed change, owner, current
+status, reason to revisit, and next implementation trigger instead of filling
+out an implementation-phase template prematurely.
+
+When a manifest exists, it is the fail-closed oracle for whether a phase is
+done. Do not mark a gated phase complete from narrative judgement alone.
 
 When `Scope` is used, keep it explicit:
 
@@ -121,11 +135,12 @@ When `Scope` is used, keep it explicit:
 A manifest is a `.plan.toml` gate file paired with a durable plan. It is not a
 proposal by itself.
 
-A proposal is a proposal-only workstream plus its supporting artifacts:
+A proposal is a durable proposal record. It may have supporting artifacts:
 
 - the proposal plan family in `docs/plans/proposals/`
 - any pending ADR in `docs/adr/pending/`
-- the proposal log in the repo-owned proposal surface
+- any proposal log in the repo-owned proposal surface
+- any manifest used for gated or generated live-status tracking
 
 Do not use “manifest” as a synonym for “proposal”.
 
@@ -161,8 +176,8 @@ Use `docs/plans/` for things like:
 
 ## Archive Vs History
 
-- `docs/plans/archive/` is for historical plan families and their manifests,
-  completion logs, and phase notes
+- `docs/plans/archive/` is for historical plan families and the manifests,
+  completion logs, and phase notes that still carry review value
 - `docs/history/` is for factual ledgers, audits, migration notes, and
   postmortems
 
@@ -174,8 +189,7 @@ instead of moving it into `docs/history/`.
 - accepted architectural decisions
   Those belong in `docs/adr/`.
 - proposal logs
-  Those belong in the repo-owned proposal-log surface, usually
-  `docs/proposals/`.
+  Those belong in the repo-owned proposal-log surface when the repo keeps one.
 - factual event ledgers or postmortems
   Those belong in `docs/history/`.
 - runtime-loaded operating procedures

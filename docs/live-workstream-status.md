@@ -1,8 +1,9 @@
 # Live Workstream Status
 
 This ledger is the repo-local mutable current-state surface for active
-workstreams, preserved pending proposals, and other manifest-backed plan
-families.
+workstreams, manifest-backed pending proposals, and other manifest-backed plan
+families. Compact proposal records without manifests remain valid durable docs
+but may not appear in this generated ledger.
 
 ## Definitions
 

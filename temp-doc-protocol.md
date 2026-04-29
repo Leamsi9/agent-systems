@@ -16,9 +16,11 @@ Use it for things like:
   history note
 - temporary inventories or reconciliations that are not themselves part of the
   preserved repo record
+- temporary ledgers, tracking files, and draft manifests that are useful while
+  a branch is active but should not survive promotion
 
-Do not use `docs/temp/` for artifacts that the substantive-work protocol or
-proposal protocol already expects to preserve durably.
+Do not use `docs/temp/` for artifacts that the substantive-work protocol,
+proposal protocol, or reviewer explicitly expects to preserve durably.
 
 ## What Must Stay Durable Instead
 
@@ -26,10 +28,10 @@ These stay outside `docs/temp/` from the start:
 
 - durable plan families in `docs/plans/`
 - proposal plan families in `docs/plans/proposals/`
-- proposal logs in `docs/proposals/`
 - accepted ADRs in `docs/adr/`
-- pending ADRs in `docs/adr/pending/`
+- pending ADRs in `docs/adr/pending/` when the repo keeps pending ADRs
 - historical ledgers and postmortems in `docs/history/`
+- proposal logs in `docs/proposals/` when the repo keeps proposal logs
 
 If a note becomes important enough to survive the current task, preserve the
 relevant content in the proper durable surface and then delete the temp doc.
@@ -56,7 +58,7 @@ If there is no stable feature slug yet, place the file directly under
 1. Create temporary notes in `docs/temp/` first.
 2. Review them before closing the task.
 3. Preserve any durable content in `docs/plans/`, `docs/proposals/`,
-   `docs/adr/`, or `docs/history/` as appropriate.
+   `docs/adr/`, `docs/history/`, or the commit message as appropriate.
 4. Delete the temp docs after preservation.
 
 At steady state, `docs/temp/` should normally contain only its `README.md` or a

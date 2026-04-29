@@ -1,10 +1,10 @@
 title = "Example substantive workstream"
 branch = "feature/example-workstream"
 root_dir = "../../.."
-completion_ledger = "docs/plans/feature/example-workstream-completion.md"
 phase_order = ["branch_setup", "implementation", "closeout"]
 
-# Proposal-only slices should also follow agent-protocols/proposal-protocol.md.
+# Add completion_ledger only when a separate completion log is useful.
+# Proposal-only slices should follow agent-protocols/proposal-protocol.md.
 # Run this manifest with:
 # python3 agent-protocols/scripts/check_gated_plan.py path/to/work.plan.toml --phase phase_name
 
