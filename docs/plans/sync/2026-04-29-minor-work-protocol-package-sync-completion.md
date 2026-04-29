@@ -15,4 +15,12 @@ Package validation completed.
 
 ## Consumer Refresh
 
-Pending.
+Consumer refresh completed.
+
+- Fast-forwarded `agent-protocols/main` to `8b25255` and pushed it to
+  `origin/main`.
+- Ran the package installer against `/home/ismael/Github/ironclaw-core`.
+- Confirmed the `ironclaw-core/agent-protocols/` vendored files match the
+  package source for the package-owned files.
+- Fast-forwarded `ironclaw-core/main` to `62193160` and pushed it to
+  `origin/main`.
