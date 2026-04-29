@@ -41,7 +41,7 @@ is not the same thing as a proposal log. Proposal logs live under
 
 ### `sync/`
 
-None.
+- [Minor work protocol package sync, 2026-04-29](sync/2026-04-29-minor-work-protocol-package-sync.md)
 
 ### `hotfix/`
 

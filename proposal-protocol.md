@@ -101,6 +101,11 @@ ledger such as `docs/live-workstream-status.md` surface the proposal as
 `pending_proposal` when it is preserved on the integration branch without a
 live implementation branch.
 
+Pending means the proposal package is ready on `main`, but substantive
+implementation has not begun. Once implementation starts, move to a fresh
+substantive-work branch and treat that workstream as `active` implementation
+rather than as a still-pending proposal.
+
 ## Ownership Rules
 
 For cross-repo proposal work, use these defaults:
@@ -159,6 +164,10 @@ The intended lifecycle is:
 6. later either:
    - resume it as a fresh implementation workstream, or
    - archive it as superseded or rejected
+
+A completed implementation does not leave the proposal live. Once the
+implementation lands, archive or supersede the pending proposal artifacts so
+they remain historical rather than active.
 
 When a proposal is accepted later:
 

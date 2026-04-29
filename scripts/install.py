@@ -20,6 +20,7 @@ VENDORED_FILES = [
     "assistant-integration.md",
     "assistant-adoption-prompt.md",
     "substantive-work-protocol.md",
+    "minor-work-protocol.md",
     "proposal-protocol.md",
     "plan-protocol.md",
     "temp-doc-protocol.md",

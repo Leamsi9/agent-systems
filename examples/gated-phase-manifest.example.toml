@@ -47,8 +47,12 @@ path = "some/file/or/doc.md"
 pattern = "old authoritative path"
 
 [phases.closeout]
-summary = "Refresh docs and confirm merge readiness."
+summary = "Refresh docs and confirm merge-and-clean readiness."
 depends_on = ["implementation"]
+
+# A real closeout phase should normally prove more than "tests still pass".
+# After promotion into main, prefer checks that confirm absorbed branches and
+# worktrees were removed or that their preservation was recorded deliberately.
 
 [[phases.closeout.checks]]
 id = "branch-name-matches-plan"

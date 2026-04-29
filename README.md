@@ -1,6 +1,6 @@
 # Agent Protocols
 
-Experimental package version: `0.0.3`
+Experimental package version: `0.0.4`
 
 This package is a reusable, repo-agnostic protocol kit for agent-driven
 planning, proposal capture, phase gates, and live workstream auditing.
@@ -121,6 +121,9 @@ different repo.
   in another repo.
 - `substantive-work-protocol.md`
   Canonical workflow for non-trivial implementation work.
+- `minor-work-protocol.md`
+  Lightweight workflow for tiny, single-slice changes that do not warrant the
+  substantive protocol.
 - `proposal-protocol.md`
   Canonical workflow for proposal-only slices that stop before implementation.
 - `plan-protocol.md`

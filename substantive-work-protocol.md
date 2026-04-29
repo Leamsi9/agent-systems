@@ -20,8 +20,9 @@ This protocol is the default when any of these are true:
 - the work crosses repos or ownership boundaries
 - the user asked for an epic, rollout, or non-trivial implementation plan
 
-For tiny local edits, normal scoped execution is still fine. For substantive
-work, use this protocol unless there is a very good reason not to.
+For tiny, single-slice changes that do not meet the bar above, use the
+[Minor work protocol](minor-work-protocol.md) instead. For substantive work,
+use this protocol unless there is a very good reason not to.
 
 ## Core Rules
 

@@ -1,0 +1,61 @@
+title = "Minor work protocol package sync"
+branch = "chore/minor-work-protocol-package-sync-2026-04-29"
+root_dir = "../../.."
+completion_ledger = "docs/plans/sync/2026-04-29-minor-work-protocol-package-sync-completion.md"
+phase_order = ["package_validation"]
+
+[phases.package_validation]
+summary = "Validate the package-side minor-work protocol sync before promoting it."
+
+[[phases.package_validation.checks]]
+id = "branch-current"
+type = "command"
+command = "git branch --show-current | grep -Fx chore/minor-work-protocol-package-sync-2026-04-29"
+
+[[phases.package_validation.checks]]
+id = "plan-exists"
+type = "path_exists"
+path = "docs/plans/sync/2026-04-29-minor-work-protocol-package-sync.md"
+
+[[phases.package_validation.checks]]
+id = "manifest-exists"
+type = "path_exists"
+path = "docs/plans/sync/2026-04-29-minor-work-protocol-package-sync.plan.toml"
+
+[[phases.package_validation.checks]]
+id = "completion-log-exists"
+type = "path_exists"
+path = "docs/plans/sync/2026-04-29-minor-work-protocol-package-sync-completion.md"
+
+[[phases.package_validation.checks]]
+id = "version-bumped"
+type = "command"
+command = "grep -Fx 0.0.4 VERSION && rg -F 'Experimental package version: `0.0.4`' README.md"
+
+[[phases.package_validation.checks]]
+id = "minor-protocol-present"
+type = "path_exists"
+path = "minor-work-protocol.md"
+
+[[phases.package_validation.checks]]
+id = "substantive-links-minor"
+type = "text_present"
+path = "substantive-work-protocol.md"
+text = "[Minor work protocol](minor-work-protocol.md)"
+
+[[phases.package_validation.checks]]
+id = "installer-vendors-minor"
+type = "text_present"
+path = "scripts/install.py"
+text = "\"minor-work-protocol.md\""
+
+[[phases.package_validation.checks]]
+id = "scripts-compile"
+type = "command"
+command = "python3 -m py_compile scripts/check_gated_plan.py scripts/workstream.py scripts/install.py"
+
+[[phases.package_validation.checks]]
+id = "completion-records-package-validation"
+type = "text_present"
+path = "docs/plans/sync/2026-04-29-minor-work-protocol-package-sync-completion.md"
+text = "Package validation completed."

@@ -113,6 +113,16 @@ def parse_args() -> argparse.Namespace:
         help="Emit machine-readable JSON.",
     )
 
+    reconcile_parser = subparsers.add_parser(
+        "reconcile",
+        help="Emit a clean-git reconciliation inventory with recommended actions.",
+    )
+    reconcile_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit machine-readable JSON.",
+    )
+
     sync_parser = subparsers.add_parser(
         "sync-index",
         help="Refresh the generated current-state section in the configured live workstream ledger.",
@@ -374,16 +384,21 @@ def git_worktrees(repo: RepoConfig) -> dict[str, dict[str, Any]]:
         )
         status_lines = status_output.splitlines()
         dirty_entries = []
+        dirty_paths = []
         for line in status_lines[1:]:
             candidate = line[3:] if len(line) > 3 else line
             normalized_candidate = normalize_dirty_path(candidate)
             if normalized_candidate in repo.ignored_dirty_paths:
                 continue
             dirty_entries.append(line)
+            if " -> " in normalized_candidate:
+                normalized_candidate = normalized_candidate.split(" -> ", 1)[1]
+            dirty_paths.append(normalized_candidate)
         entries[branch] = {
             "path": str(path),
             "dirty": bool(dirty_entries),
             "dirty_entries": dirty_entries,
+            "dirty_paths": sorted(dict.fromkeys(dirty_paths)),
         }
     return entries
 
@@ -436,6 +451,233 @@ def git_branches(repo: RepoConfig) -> list[dict[str, Any]]:
             }
         )
     return branches
+
+
+def git_diff_name_only(repo: RepoConfig, left: str, right: str) -> list[str]:
+    output = require_ok(
+        run_command(["git", "diff", "--name-only", f"{left}...{right}", "--"], repo.root),
+        f"git diff --name-only failed for {repo.repo_id}:{left}...{right}",
+    )
+    paths = [normalize_dirty_path(line.strip()) for line in output.splitlines() if line.strip()]
+    return sorted(dict.fromkeys(paths))
+
+
+def summarize_paths(paths: list[str]) -> dict[str, bool]:
+    if not paths:
+        return {
+            "doc_only": False,
+            "pending_surface_only": False,
+        }
+
+    def is_doc_path(path: str) -> bool:
+        return path.startswith("docs/") or path.endswith(".md") or path.endswith(".plan.toml")
+
+    pending_prefixes = (
+        "docs/adr/pending/",
+        "docs/plans/proposals/",
+        "docs/proposals/",
+    )
+    allowed_pending_companions = {
+        "docs/plans/plans-index.md",
+        "docs/live-workstream-status.md",
+        "docs/README.md",
+        "docs/adr/README.md",
+        "docs/proposals/README.md",
+    }
+    return {
+        "doc_only": all(is_doc_path(path) for path in paths),
+        "pending_surface_only": all(
+            path.startswith(pending_prefixes) or path in allowed_pending_companions
+            for path in paths
+        ),
+    }
+
+
+def infer_implementation_state(
+    classification: str,
+    plan_status: str | None,
+    proposal_state: str | None,
+    merged_into_main: bool,
+) -> str:
+    if proposal_state == "pending":
+        return "pending"
+    if merged_into_main and classification in {"promotable", "merged_stale"}:
+        return "completed"
+    if classification == "promotable" or plan_status == "promotion_ready":
+        return "ready_to_merge"
+    if classification == "active":
+        return "active"
+    if classification == "merged_stale":
+        return "completed"
+    if classification == "historical":
+        return "historical"
+    return "needs_reconciliation"
+
+
+def recommend_reconciliation_action(
+    classification: str,
+    proposal_state: str | None,
+    plan_status: str | None,
+    merged_into_main: bool,
+    dirty: bool,
+    doc_only: bool,
+    pending_surface_only: bool,
+) -> tuple[str, str]:
+    if proposal_state == "pending" or pending_surface_only:
+        return (
+            "promote_pending_to_main",
+            "Pending proposal artifacts belong on main without a live implementation branch.",
+        )
+    if merged_into_main or classification == "merged_stale":
+        if dirty:
+            if doc_only:
+                return (
+                    "promote_docs_to_main_then_delete",
+                    "The branch is already merged, and only uncommitted docs remain to port before cleanup.",
+                )
+            return (
+                "review_port_or_discard_then_delete",
+                "The branch is already merged, but non-doc local changes still need an explicit port-versus-discard decision.",
+            )
+        return (
+            "delete_merged_stale",
+            "The branch tip is already merged into main and no unique dirty state remains.",
+        )
+    if classification == "promotable" or plan_status == "promotion_ready":
+        return (
+            "merge_to_main",
+            "The workstream is marked promotion_ready and should be merged back into main.",
+        )
+    if classification == "active":
+        return (
+            "keep_active",
+            "Substantive implementation is underway and should stay on its dedicated branch.",
+        )
+    if classification == "diverged":
+        if doc_only:
+            return (
+                "review_docs_for_promotion",
+                "Docs-only work diverges from main and likely belongs on main as pending or historical artifacts.",
+            )
+        return (
+            "review_port_or_discard",
+            "The branch diverges from main and needs an explicit port-versus-discard decision.",
+        )
+    return (
+        "retain_historical",
+        "Historical or protected refs should remain preserved unless a dedicated cleanup stream supersedes them.",
+    )
+
+
+def summarize_action_counts(decisions: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for decision in decisions:
+        action = str(decision["recommended_action"])
+        counts[action] = counts.get(action, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def build_reconciliation(payload: dict[str, Any], repos: list[RepoConfig]) -> dict[str, Any]:
+    repo_lookup = {repo.repo_id: repo for repo in repos}
+    branch_decisions: list[dict[str, Any]] = []
+    branchless_decisions: list[dict[str, Any]] = []
+
+    for repo_payload in payload["repos"]:
+        repo = repo_lookup[str(repo_payload["id"])]
+        for branch in repo_payload["branches"]:
+            if branch["branch"] == repo.main_branch:
+                continue
+            branch_diff_paths = (
+                git_diff_name_only(repo, repo.main_branch, str(branch["branch"]))
+                if branch["ahead_of_main"] or branch["behind_main"]
+                else []
+            )
+            worktree_dirty_paths = list(branch.get("dirty_paths", []))
+            combined_paths = sorted(dict.fromkeys(branch_diff_paths + worktree_dirty_paths))
+            path_summary = summarize_paths(combined_paths)
+            recommended_action, rationale = recommend_reconciliation_action(
+                classification=str(branch["classification"]),
+                proposal_state=branch.get("proposal_state"),
+                plan_status=branch.get("plan_status"),
+                merged_into_main=bool(branch["merged_into_main"]),
+                dirty=bool(branch["dirty"]),
+                doc_only=path_summary["doc_only"],
+                pending_surface_only=path_summary["pending_surface_only"],
+            )
+            branch_decisions.append(
+                {
+                    "repo": repo.repo_id,
+                    "branch": branch["branch"],
+                    "classification": branch["classification"],
+                    "implementation_state": infer_implementation_state(
+                        classification=str(branch["classification"]),
+                        plan_status=branch.get("plan_status"),
+                        proposal_state=branch.get("proposal_state"),
+                        merged_into_main=bool(branch["merged_into_main"]),
+                    ),
+                    "plan_status": branch.get("plan_status"),
+                    "proposal_state": branch.get("proposal_state"),
+                    "recommended_action": recommended_action,
+                    "rationale": rationale,
+                    "worktree_path": branch.get("worktree_path"),
+                    "dirty": branch["dirty"],
+                    "dirty_entries": branch.get("dirty_entries", []),
+                    "branch_diff_paths": branch_diff_paths,
+                    "worktree_dirty_paths": worktree_dirty_paths,
+                    "combined_paths": combined_paths,
+                    "doc_only": path_summary["doc_only"],
+                    "pending_surface_only": path_summary["pending_surface_only"],
+                }
+            )
+
+    for item in payload["pending_proposals"]:
+        branchless_decisions.append(
+            {
+                "branch": item["branch"],
+                "classification": item["classification"],
+                "status": item["status"],
+                "proposal_state": item["proposal_state"],
+                "recommended_action": "preserve_pending_on_main",
+                "rationale": "Pending proposal artifacts already live on main and should remain branchless until implementation begins.",
+                "plan_path": item["plan_path"],
+            }
+        )
+
+    for item in payload["branchless_plan_manifests"]:
+        if item["classification"] == "historical":
+            action = "keep_historical_artifact"
+            rationale = "Historical plan families are already recorded on main and do not need a live branch."
+        else:
+            action = "review_branchless_manifest"
+            rationale = "Branchless non-pending manifests need an explicit check that their mainline state and archive posture are correct."
+        branchless_decisions.append(
+            {
+                "branch": item["branch"],
+                "classification": item["classification"],
+                "status": item["status"],
+                "proposal_state": item["proposal_state"],
+                "recommended_action": action,
+                "rationale": rationale,
+                "plan_path": item["plan_path"],
+            }
+        )
+
+    return {
+        "generated_at": payload["generated_at"],
+        "root": payload["root"],
+        "summary": {
+            "branch_actions": summarize_action_counts(branch_decisions),
+            "branchless_actions": summarize_action_counts(branchless_decisions),
+        },
+        "branch_decisions": sorted(
+            branch_decisions,
+            key=lambda item: (str(item["repo"]), str(item["branch"])),
+        ),
+        "branchless_decisions": sorted(
+            branchless_decisions,
+            key=lambda item: str(item["branch"]),
+        ),
+    }
 
 
 def classify_branch(
@@ -502,6 +744,7 @@ def build_audit(root: Path, repos: list[RepoConfig]) -> dict[str, Any]:
                     "worktree_path": worktree["path"] if worktree else None,
                     "dirty": worktree["dirty"] if worktree else False,
                     "dirty_entries": worktree["dirty_entries"] if worktree else [],
+                    "dirty_paths": worktree["dirty_paths"] if worktree else [],
                     "manifest_paths": [str(record.manifest_path) for record in manifest_records],
                     "plan_paths": [str(record.plan_path) for record in manifest_records if record.plan_path],
                     "plan_status": manifest_status,
@@ -779,6 +1022,28 @@ def emit_text(payload: dict[str, Any]) -> int:
     return 0
 
 
+def emit_reconciliation_text(payload: dict[str, Any]) -> int:
+    print(f"generated_at: {payload['generated_at']}")
+    print("branch decisions:")
+    for item in payload["branch_decisions"]:
+        worktree = item["worktree_path"] or "-"
+        print(
+            f"  - {item['repo']}:{item['branch']} "
+            f"[{item['classification']}/{item['implementation_state']}] "
+            f"action={item['recommended_action']} dirty={item['dirty']} worktree={worktree}"
+        )
+        if item["combined_paths"]:
+            print(f"    paths: {', '.join(item['combined_paths'])}")
+    if payload["branchless_decisions"]:
+        print("branchless decisions:")
+        for item in payload["branchless_decisions"]:
+            print(
+                f"  - {item['branch']} [{item['classification']}/{item['status']}] "
+                f"action={item['recommended_action']}"
+            )
+    return 0
+
+
 def main() -> int:
     args = parse_args()
     settings = load_settings(args.root.resolve(), args.repo)
@@ -788,6 +1053,12 @@ def main() -> int:
             print(json.dumps(payload, indent=2))
             return 0
         return emit_text(payload)
+    if args.command == "reconcile":
+        reconciliation = build_reconciliation(payload, list(settings.repos))
+        if args.json:
+            print(json.dumps(reconciliation, indent=2))
+            return 0
+        return emit_reconciliation_text(reconciliation)
     if args.command == "sync-index":
         return sync_index(settings, payload, check=args.check, confirm=args.confirm)
     raise AssertionError(f"unhandled command: {args.command}")
