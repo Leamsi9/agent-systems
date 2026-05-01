@@ -1,6 +1,6 @@
 # Agent Protocols
 
-Experimental package version: `0.0.5`
+Experimental package version: `0.0.6`
 
 This package is a reusable, repo-agnostic protocol kit for agent-driven
 planning, right-sized proposal capture, phase gates, and live workstream
@@ -120,6 +120,9 @@ different repo.
 - `assistant-adoption-prompt.md`
   Copy-paste prompt template for asking a coding assistant to adopt the package
   in another repo.
+- `merge-to-main-protocol.md`
+  Canonical workflow for promoting scoped changes to `main` through GitHub
+  pull requests.
 - `substantive-work-protocol.md`
   Canonical workflow for non-trivial implementation work.
 - `minor-work-protocol.md`
@@ -137,6 +140,9 @@ different repo.
   Reusable example manifest for gated mini-plans.
 - `scripts/check_gated_plan.py`
   Canonical phase-checker implementation.
+- `scripts/check_merge_to_main_protocol.py`
+  Canonical merge-to-main protocol and repo-local testing promotion wiring
+  checker.
 - `scripts/workstream.py`
   Canonical live-workstream audit, clean-git reconciliation, and status-ledger
   sync script.

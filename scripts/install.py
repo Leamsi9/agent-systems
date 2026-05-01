@@ -19,6 +19,7 @@ VENDORED_FILES = [
     "SYNCING.md",
     "assistant-integration.md",
     "assistant-adoption-prompt.md",
+    "merge-to-main-protocol.md",
     "substantive-work-protocol.md",
     "minor-work-protocol.md",
     "proposal-protocol.md",
