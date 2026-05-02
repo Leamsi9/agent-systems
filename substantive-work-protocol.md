@@ -245,6 +245,10 @@ If durable source, doc, schema, or config changes remain uncommitted at final
 response time, the result is `failed_gate`. Do not report dirty implementation
 work as ready for review, and do not downgrade it to a degraded completion.
 
+Non-mutating exploratory work does not need a git checkpoint. If exploratory or
+proposal-only work creates durable repo artifacts, those artifacts must be
+committed or explicitly discarded before the work can be reported as complete.
+
 The final implementation or closeout phase should normally include both:
 
 ```toml
@@ -258,6 +262,15 @@ id = "head-ahead-of-baseline"
 type = "git_head_ahead"
 repo = "."
 ```
+
+## Browser And Mobile Verification
+
+Visual UI work must declare browser verification requirements. Mobile-sensitive
+work must also require a narrow viewport check.
+
+Evidence should record the route, viewport, browser/tool, target visibility,
+and any captured artifact path when available. If verification cannot run, the
+work may still finish, but it must finish as `degraded_verification`.
 
 ## Clean Git Closeout
 

@@ -1,20 +1,33 @@
 # Delegated Work Protocol
 
 This protocol wraps delegated sandbox jobs for a repo that vendors
-`agent-protocols/`.
+`agent-protocols/`. It governs only behavior that is unique to delegated
+sandbox execution.
 
-Use it when a coding worker, research worker, or other sandboxed job may be
-summarized back to the operator as done, ready for review, or complete.
+Delegated work is not a third category of work. Any delegated job that performs
+coding work or mutates repo files must adopt either the
+[Substantive work protocol](substantive-work-protocol.md) or the
+[Minor work protocol](minor-work-protocol.md) before editing files.
+
+Use the minor protocol only when all of its criteria are true. Use the
+substantive protocol for everything else, including any change that crosses
+repos or ownership boundaries, touches a public surface, changes a schema or
+contract, needs multiple reviewable slices, or carries meaningful product,
+runtime, or security risk. If the job is non-mutating research or exploration,
+record that as `protocol_adopted: non_mutating`.
 
 ## Required Quality Evidence
 
-Before a delegated coding job starts, the runtime should record a preflight
-report with:
+Before a delegated coding job starts, the runtime must deterministically record
+a preflight report with:
 
 - host project directory and delegated container working directory
 - resolved git worktree root when available
 - current branch and commit when git metadata is available
-- recorded baseline branch or commit for implementation work
+- delegated protocol path supplied to the worker
+- selected work protocol path or a required worker selection step between
+  `minor`, `substantive`, and `non_mutating`
+- recorded baseline branch or commit for implementation work when available
 - effective worker mode, model, reasoning effort, and sandbox mode
 - expected developer tools, starting with `git` and `rg`
 - whether browser or mobile verification is required by the task
@@ -23,9 +36,20 @@ report with:
 The preflight report is runtime evidence. Prompt text may point workers at this
 protocol, but prompt text is not the enforcement mechanism.
 
+The delegated runtime must inject a protocol gate before the worker's task
+content. That gate must instruct the worker to read this protocol first and
+then adopt exactly one of:
+
+- `protocol_adopted: minor`
+- `protocol_adopted: substantive`
+- `protocol_adopted: non_mutating`
+
+The quality log must contain deterministic evidence that this protocol gate was
+provided to the worker and that the work protocol adoption step was required.
+
 ## Completion Quality
 
-Delegated jobs finish with one quality state:
+Delegated jobs finish with one top-level quality state:
 
 - `passed`: preflight, worker execution, follow-ups, final git checkpoint, and
   required verification all produced sufficient evidence
@@ -36,51 +60,23 @@ Delegated jobs finish with one quality state:
 - `failed_gate`: a required gate failed and the job should not be treated as
   complete
 
-If more than one degraded state applies, the runtime reports the most severe
-state and preserves all issues in the job quality log.
-
-## Final Git Checkpoint
-
-Any delegated job that mutates repo files and reports `passed`,
-`ready_for_review`, `complete`, or an equivalent terminal state must finish
-with a clean git checkpoint.
-
-The final checkpoint requires:
-
-- `git status --porcelain --untracked-files=all` is empty in the delegated
-  worktree
-- implementation work has `HEAD` ahead of the recorded baseline branch or
-  commit
-- the final job result records branch, commit, pushed: yes/no, and
-  worktree_clean: true/false
-
-A dirty worktree at final response time is `failed_gate`. Do not report dirty
-implementation output as ready for review, and do not downgrade uncommitted
-source, doc, schema, or config changes to a degraded completion.
-
-Non-mutating exploratory jobs do not need a git checkpoint. If an exploratory
-or proposal-only job creates durable repo artifacts, those artifacts must be
-committed or explicitly discarded before the job can be reported as complete.
-
-## Browser And Mobile Verification
-
-Visual UI work must declare browser verification requirements. Mobile-sensitive
-work must also require a narrow viewport check.
-
-Evidence should record the route, viewport, browser/tool, target visibility,
-and any captured artifact path when available. If verification cannot run, the
-job may still finish, but it must finish as `degraded_verification`.
+The top-level state may still be the most severe state for compact display, but
+the quality log must report every non-passed state and every issue. For
+example, a job with missing `rg`, failed follow-up resume, and missing browser
+evidence should preserve all three states and all three issue messages, not
+only `degraded_workers`.
 
 ## Follow-Up Workers
 
-Follow-up prompts, resume sessions, and spawned workers must report failures as
-quality issues. A follow-up launch failure may leave the primary task output
-usable, but the parent job quality must become `degraded_workers` unless the
-failure makes the whole job fail.
+Follow-up prompts, resumed sessions, and child workers are delegated work too.
+They must receive this protocol gate before their task content.
 
-## Escalation
+The parent job must fold child quality logs into its own quality log without
+inference:
 
-Delegated work does not replace the substantive work protocol. Escalate to the
-substantive protocol when the delegated task crosses ownership boundaries,
-touches durable contracts, changes schema or public surfaces, requires multiple
-reviewable slices, or needs gated phase evidence to be considered done.
+- preserve every child quality state other than `passed`
+- preserve every child quality issue
+- use `degraded_workers` when a child worker, follow-up prompt, or resume
+  launch fails but the parent output remains usable
+- use `failed_gate` when the child failure invalidates the parent result or
+  violates the adopted minor/substantive protocol

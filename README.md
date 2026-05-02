@@ -1,6 +1,6 @@
 # Agent Protocols
 
-Experimental package version: `0.0.8`
+Experimental package version: `0.0.9`
 
 This package is a reusable, repo-agnostic protocol kit for agent-driven
 planning, right-sized proposal capture, phase gates, and live workstream
@@ -129,7 +129,8 @@ different repo.
   Lightweight workflow for tiny, single-slice changes that do not warrant the
   substantive protocol.
 - `delegated-work-protocol.md`
-  Quality-state and final-checkpoint rules for delegated sandbox jobs.
+  Deterministic sandbox-job wrapper that requires every coding job to adopt
+  either the substantive or minor work protocol.
 - `proposal-protocol.md`
   Canonical workflow for proposal-only slices that stop before implementation,
   with one compact durable record by default and extra artifacts only when

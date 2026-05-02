@@ -52,6 +52,9 @@ It does not replace:
 6. After the change lands, decide whether the decision behind it is worth
    preserving in a durable record. For most minor work the answer is no; for
    some it is yes.
+7. Any final `ready for review`, `complete`, `passed`, or equivalent result
+   requires a clean git checkpoint. A dirty worktree at final response time is
+   a failed gate, not a degraded completion.
 
 ## Lightweight Decision Log
 
@@ -123,3 +126,34 @@ Closeout for minor work is:
 
 A decision-log entry is not a substitute for substantive completion evidence.
 It is a lightweight historical breadcrumb, not a gate.
+
+## Final Git Checkpoint
+
+Before reporting minor work as `ready for review`, `complete`, `passed`, or an
+equivalent terminal state, prove the reviewable result is committed.
+
+The final checkpoint requires:
+
+- `git status --porcelain --untracked-files=all` is empty in the worktree used
+  for the change
+- `HEAD` is ahead of the recorded baseline branch or commit when repo files
+  were mutated
+- the final answer, job result, or completion note states `branch`, `commit`,
+  `pushed: yes/no`, and `worktree_clean: true/false`
+
+If durable source, doc, schema, or config changes remain uncommitted at final
+response time, the result is `failed_gate`. Do not report dirty implementation
+work as ready for review, and do not downgrade it to a degraded completion.
+
+Non-mutating exploratory work does not need a git checkpoint. If exploratory or
+proposal-only work creates durable repo artifacts, those artifacts must be
+committed or explicitly discarded before the work can be reported as complete.
+
+## Browser And Mobile Verification
+
+Visual UI work must declare browser verification requirements. Mobile-sensitive
+work must also require a narrow viewport check.
+
+Evidence should record the route, viewport, browser/tool, target visibility,
+and any captured artifact path when available. If verification cannot run, the
+work may still finish, but it must finish as `degraded_verification`.
