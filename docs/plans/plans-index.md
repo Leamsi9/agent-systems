@@ -45,6 +45,7 @@ surfaces, not required companions for every proposal.
 ### `sync/`
 
 - [Minor work protocol package sync, 2026-04-29](sync/2026-04-29-minor-work-protocol-package-sync.md)
+- [Closeout git gate package sync, 2026-05-02](sync/2026-05-02-closeout-git-gate-package-sync.md)
 
 ### `hotfix/`
 

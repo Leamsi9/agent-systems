@@ -1,5 +1,6 @@
 title = "Example substantive workstream"
 branch = "feature/example-workstream"
+baseline = "origin/main"
 root_dir = "../../.."
 phase_order = ["branch_setup", "implementation", "closeout"]
 
@@ -38,6 +39,11 @@ command = "cargo test --test substantive_work_protocol -- --nocapture"
 [[phases.implementation.checks]]
 id = "repo-clean"
 type = "git_clean"
+repo = "."
+
+[[phases.implementation.checks]]
+id = "head-ahead-of-baseline"
+type = "git_head_ahead"
 repo = "."
 
 [[phases.implementation.checks]]

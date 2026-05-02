@@ -125,7 +125,11 @@ def resolve_repo_dir(root_dir: Path, raw_check: dict[str, Any]) -> Path:
     return resolve_check_path(root_dir, repo_value)
 
 
-def run_check(root_dir: Path, raw_check: dict[str, Any]) -> CheckResult:
+def run_check(
+    root_dir: Path,
+    raw_check: dict[str, Any],
+    manifest_data: dict[str, Any],
+) -> CheckResult:
     check_id = str(raw_check.get("id", "<unnamed>"))
     check_type = str(raw_check.get("type", "")).strip()
     if not check_type:
@@ -190,6 +194,52 @@ def run_check(root_dir: Path, raw_check: dict[str, Any]) -> CheckResult:
         detail = completed.stdout.strip()
         passed = detail == ""
         return CheckResult(check_id, check_type, passed, detail or "clean")
+
+    if check_type == "git_head_ahead":
+        repo_dir = resolve_repo_dir(root_dir, raw_check)
+        baseline = str(raw_check.get("baseline") or manifest_data.get("baseline") or "").strip()
+        ref = str(raw_check.get("ref", "HEAD")).strip()
+        if not baseline:
+            return CheckResult(check_id, check_type, False, "missing baseline")
+        if not ref:
+            return CheckResult(check_id, check_type, False, "missing ref")
+
+        baseline_result = run_git(["rev-parse", baseline], repo_dir)
+        ref_result = run_git(["rev-parse", ref], repo_dir)
+        if baseline_result.returncode != 0 or ref_result.returncode != 0:
+            detail = (
+                baseline_result.stderr.strip()
+                or ref_result.stderr.strip()
+                or "failed to resolve baseline or ref"
+            )
+            return CheckResult(check_id, check_type, False, detail)
+
+        baseline_sha = baseline_result.stdout.strip()
+        ref_sha = ref_result.stdout.strip()
+        ancestor_result = run_git(
+            ["merge-base", "--is-ancestor", baseline_sha, ref_sha],
+            repo_dir,
+        )
+        if ancestor_result.returncode != 0:
+            return CheckResult(
+                check_id,
+                check_type,
+                False,
+                f"{ref} is not descended from baseline {baseline} ({baseline_sha})",
+            )
+
+        count_result = run_git(["rev-list", "--count", f"{baseline_sha}..{ref_sha}"], repo_dir)
+        if count_result.returncode != 0:
+            detail = count_result.stderr.strip() or f"git exited {count_result.returncode}"
+            return CheckResult(check_id, check_type, False, detail)
+        ahead_count = int(count_result.stdout.strip() or "0")
+        passed = ahead_count > 0
+        detail = (
+            f"{ref} is {ahead_count} commit(s) ahead of {baseline}"
+            if passed
+            else f"{ref} is not ahead of {baseline}"
+        )
+        return CheckResult(check_id, check_type, passed, detail)
 
     if check_type == "git_merged_into":
         repo_dir = resolve_repo_dir(root_dir, raw_check)
@@ -292,7 +342,7 @@ def evaluate_manifest(
             if dependency in results_by_phase
         )
         checks = [
-            run_check(root_dir, raw_check)
+            run_check(root_dir, raw_check, data)
             for raw_check in phase_data.get("checks", [])
         ]
         result = PhaseResult(

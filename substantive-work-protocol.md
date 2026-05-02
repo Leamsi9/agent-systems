@@ -48,6 +48,13 @@ use this protocol unless there is a very good reason not to.
 11. Proposal-only slices need only the durable artifacts that will still be
     useful after review. Use the proposal protocol to decide what survives,
     and keep temporary ledgers or inventories disposable by default.
+12. For implementation work, a final `ready for review`, `complete`, or
+    equivalent result requires a clean git checkpoint: `git status
+    --porcelain --untracked-files=all` must be empty, `HEAD` must be ahead of
+    the recorded baseline, and the final answer or completion record must
+    include branch, commit, pushed: yes/no, and worktree_clean: true/false.
+    A dirty worktree at final response is a failed gate, not a degraded
+    completion.
 
 ## Lifecycle States
 
@@ -219,6 +226,39 @@ For substantive work, follow this loop every time:
 11. Advance only when the phase is green.
 12. Merge only after acceptance and final-green closure.
 
+## Final Git Checkpoint
+
+Before reporting implementation work as `ready for review`, `complete`,
+`passed`, or an equivalent terminal state, prove the branch contains the
+reviewable result.
+
+The final checkpoint requires:
+
+- `git status --porcelain --untracked-files=all` is empty in the implementation
+  worktree
+- `HEAD` is ahead of the baseline branch or commit recorded in the plan and
+  manifest
+- the final answer, job result, or completion log states `branch`, `commit`,
+  `pushed: yes/no`, and `worktree_clean: true/false`
+
+If durable source, doc, schema, or config changes remain uncommitted at final
+response time, the result is `failed_gate`. Do not report dirty implementation
+work as ready for review, and do not downgrade it to a degraded completion.
+
+The final implementation or closeout phase should normally include both:
+
+```toml
+[[phases.implementation.checks]]
+id = "repo-clean"
+type = "git_clean"
+repo = "."
+
+[[phases.implementation.checks]]
+id = "head-ahead-of-baseline"
+type = "git_head_ahead"
+repo = "."
+```
+
 ## Clean Git Closeout
 
 When the operator asks to "clean git", do not treat that as generic pruning.
@@ -375,6 +415,7 @@ Supported check types:
 - `regex_absent`
 - `command`
 - `git_clean`
+- `git_head_ahead`
 - `git_merged_into`
 - `git_ref_equals`
 - `git_branch_absent`

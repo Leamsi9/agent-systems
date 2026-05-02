@@ -23,6 +23,7 @@ VENDORED_FILES = [
     "merge-to-main-protocol.md",
     "substantive-work-protocol.md",
     "minor-work-protocol.md",
+    "delegated-work-protocol.md",
     "proposal-protocol.md",
     "plan-protocol.md",
     "temp-doc-protocol.md",
