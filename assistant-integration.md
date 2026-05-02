@@ -13,9 +13,10 @@ Recommended approach:
 2. keep repo topology in a repo-local `agent-protocols.toml`
 3. point assistant instruction files at
    `agent-protocols/substantive-work-protocol.md`
-4. keep repo-specific landing pages, ledgers, ADRs, and any proposal logs
+4. keep repo-specific protocol extensions under `agent-protocols/local/`
+5. keep repo-specific landing pages, ledgers, ADRs, and any proposal logs
    outside the vendored package
-5. keep temporary working markdown under `docs/temp/` and follow
+6. keep temporary working markdown under `docs/temp/` and follow
    `agent-protocols/temp-doc-protocol.md`
 
 Do not fork the protocol docs into separate copies for each assistant.
@@ -98,6 +99,10 @@ python3 /path/to/external/agent-protocols/scripts/install.py --yes --print-adopt
 
 If a change to the vendored package is generic, upstream it to the package repo
 instead of keeping it as a permanent consumer-only fork.
+
+Repo-specific protocol extensions belong in `agent-protocols/local/`. The
+installer creates that directory when missing and preserves its contents during
+package refreshes.
 
 ## Multi-Repo Guidance
 

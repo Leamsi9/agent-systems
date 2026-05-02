@@ -45,7 +45,11 @@ Requirements:
    - `docs/adr/pending/README.md` if the repo keeps pending ADRs
 6. Do not duplicate the canonical protocol docs outside `{{VENDOR_DIR}}/`.
    Repo-local docs should point back to the vendored package instead.
-7. If the change is substantive, follow `{{VENDOR_DIR}}/substantive-work-protocol.md`:
+7. Put repo-specific protocol extensions in `{{VENDOR_DIR}}/local/`.
+   - Files under `{{VENDOR_DIR}}/local/` are versioned by the consuming repo.
+   - Package refreshes should preserve those files.
+   - Generic protocol improvements should be upstreamed to the package root.
+8. If the change is substantive, follow `{{VENDOR_DIR}}/substantive-work-protocol.md`:
    create the smallest durable plan family that proves the work, keep phases
    gated, and do not claim completion without the checker passing.
    - If the work is local to this repo, place the plan in the default
@@ -64,12 +68,12 @@ Requirements:
      the workstream has a clear center, for example
      `feature/<feature-slug>/<slice>-YYYY-MM-DD` and
      `docs/temp/<feature-slug>/<topic>-YYYY-MM-DD.md`.
-8. Run the narrowest validation needed for the repo plus the package checks that
+9. Run the narrowest validation needed for the repo plus the package checks that
    apply:
    - `python3 {{VENDOR_DIR}}/scripts/check_gated_plan.py ...`
    - `python3 {{VENDOR_DIR}}/scripts/workstream.py sync-index --confirm`
    - `python3 -m py_compile {{VENDOR_DIR}}/scripts/check_gated_plan.py {{VENDOR_DIR}}/scripts/workstream.py {{VENDOR_DIR}}/scripts/install.py`
-9. Summarize:
+10. Summarize:
    - what changed
    - what was verified
    - whether the plan placement is local or `cross-repo`
