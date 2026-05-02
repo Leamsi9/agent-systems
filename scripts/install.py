@@ -13,6 +13,7 @@ from pathlib import Path
 
 
 DEFAULT_LEDGER_PATH = Path("docs/live-workstream-status.md")
+LOCAL_OVERLAY_README_PATH = Path("local/README.md")
 VENDORED_FILES = [
     "README.md",
     "VERSION",
@@ -145,6 +146,24 @@ def write_if_missing(path: Path, content: str) -> None:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
+
+
+def local_overlay_readme() -> str:
+    return """# Local Agent Protocols
+
+This directory is reserved for repo-local protocol extensions.
+
+The package installer creates `agent-protocols/local/`, but it does not treat
+this directory as package-owned content:
+
+- files in this directory are versioned by this repo
+- package refreshes preserve local files here
+- generic protocol improvements should be upstreamed to the package root
+- repo-specific protocols should stay here
+
+Do not move files from this directory into the upstream package unless the
+protocol is intentionally being generalized for all consumers.
+"""
 
 
 def package_root() -> Path:
@@ -440,6 +459,11 @@ def copy_package(source_root: Path, target_root: Path, vendor_dir: str) -> Path:
             dirs_exist_ok=True,
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
         )
+
+    write_if_missing(
+        vendor_root / LOCAL_OVERLAY_README_PATH,
+        local_overlay_readme(),
+    )
 
     return vendor_root
 

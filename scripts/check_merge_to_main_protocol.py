@@ -36,8 +36,9 @@ TESTING_REQUIRED_SNIPPETS = (
 
 AGENTS_REQUIRED_SNIPPETS = (
     "agent-protocols/merge-to-main-protocol.md",
-    "local-agent-protocols/testing-branch-promotion-protocol.md",
+    "agent-protocols/local/testing-branch-promotion-protocol.md",
 )
+LEGACY_LOCAL_DIR = "local-agent-protocols"
 
 
 def parse_args() -> argparse.Namespace:
@@ -57,8 +58,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--local-dir",
-        default="local-agent-protocols",
-        help="Repo-local protocol directory.",
+        help="Repo-local protocol directory. Defaults to <vendor-dir>/local.",
     )
     parser.add_argument(
         "--require-testing-promotion",
@@ -74,6 +74,11 @@ def parse_args() -> argparse.Namespace:
         "--forbid-legacy-local-main",
         action="store_true",
         help="Fail if the old local-main-merge protocol file is still present.",
+    )
+    parser.add_argument(
+        "--forbid-legacy-local-dir",
+        action="store_true",
+        help="Fail if the old local-agent-protocols directory is still present.",
     )
     return parser.parse_args()
 
@@ -108,7 +113,8 @@ def main() -> int:
     args = parse_args()
     repo_root = args.repo_root.resolve()
     vendor_root = (repo_root / args.vendor_dir).resolve()
-    local_root = (repo_root / args.local_dir).resolve()
+    local_dir = args.local_dir or str(Path(args.vendor_dir) / "local")
+    local_root = (repo_root / local_dir).resolve()
     failures: list[str] = []
 
     merge_path = vendor_root / MERGE_PROTOCOL
@@ -130,6 +136,11 @@ def main() -> int:
         legacy_path = vendor_root / LEGACY_LOCAL_MAIN_PROTOCOL
         if legacy_path.exists():
             failures.append(f"legacy protocol should be removed: {legacy_path}")
+
+    if args.forbid_legacy_local_dir:
+        legacy_dir = repo_root / LEGACY_LOCAL_DIR
+        if legacy_dir.exists():
+            failures.append(f"legacy local protocol dir should be removed: {legacy_dir}")
 
     if failures:
         print("merge-to-main protocol check failed:", file=sys.stderr)

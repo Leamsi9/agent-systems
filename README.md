@@ -1,6 +1,6 @@
 # Agent Protocols
 
-Experimental package version: `0.0.6`
+Experimental package version: `0.0.7`
 
 This package is a reusable, repo-agnostic protocol kit for agent-driven
 planning, right-sized proposal capture, phase gates, and live workstream
@@ -136,6 +136,9 @@ different repo.
   Canonical conventions for a repo-local `docs/plans/` surface.
 - `temp-doc-protocol.md`
   Canonical lifecycle for temporary working docs under `docs/temp/`.
+- `local/README.md`
+  Package-source marker for the consumer-owned local protocol overlay. Consumer
+  files under `agent-protocols/local/` are not package-owned.
 - `examples/gated-phase-manifest.example.toml`
   Reusable example manifest for gated mini-plans.
 - `scripts/check_gated_plan.py`
@@ -143,6 +146,9 @@ different repo.
 - `scripts/check_merge_to_main_protocol.py`
   Canonical merge-to-main protocol and repo-local testing promotion wiring
   checker.
+- `scripts/check_local_overlay_policy.py`
+  Package guard that keeps repo-local overlay files out of package-owned
+  vendoring lists.
 - `scripts/workstream.py`
   Canonical live-workstream audit, clean-git reconciliation, and status-ledger
   sync script.
@@ -202,7 +208,9 @@ To vendor this package into another repo:
    `docs/live-workstream-status.md`.
 6. Keep temporary working docs in `docs/temp/` and follow
    `agent-protocols/temp-doc-protocol.md`.
-7. Run the canonical scripts directly:
+7. Put repo-specific protocol extensions in `agent-protocols/local/`; package
+   refreshes preserve that directory and do not treat it as upstream content.
+8. Run the canonical scripts directly:
    - `python3 agent-protocols/scripts/check_gated_plan.py path/to/work.plan.toml --phase phase_name`
    - `python3 agent-protocols/scripts/workstream.py reconcile --json`
    - `python3 agent-protocols/scripts/workstream.py sync-index --confirm`
@@ -222,6 +230,8 @@ interface.
 - additive protocols, examples, or scripts are the safe default
 - moved or renamed canonical files should ship with an explicit migration note
 - consumer repos should update active references before pruning historical docs
+- `agent-protocols/local/` is the consumer-owned overlay; package-owned copy
+  lists must not include it, and installer refreshes must preserve its files
 
 ## Recommended Repo-Local Shape
 
