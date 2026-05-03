@@ -49,13 +49,20 @@ It does not replace:
    Do not split a minor change across multiple branches.
 5. Run any normally required checks (lint, format, tests) before merging.
    Minor scope is not a license to skip them.
-6. After the change lands, decide whether the decision behind it is worth
+6. Before changing an existing code surface, add or identify a meaningful
+   passing behavioral test for that surface and run it before the edit. Re-run
+   it after the edit before landing the change.
+7. For greenfield code additions, use test-driven development: write a
+   meaningful failing test for the intended behavior, add the code, then prove
+   the same test passes. Do not make the test weak enough for incomplete or
+   buggy code to pass.
+8. After the change lands, decide whether the decision behind it is worth
    preserving in a durable record. For most minor work the answer is no; for
    some it is yes.
-7. Any final `ready for review`, `complete`, `passed`, or equivalent result
+9. Any final `ready for review`, `complete`, `passed`, or equivalent result
    requires a clean git checkpoint. A dirty worktree at final response time is
    a failed gate, not a degraded completion.
-8. If the work involves branch/worktree cleanup or ambiguous git state, run
+10. If the work involves branch/worktree cleanup or ambiguous git state, run
    `agent-protocols/scripts/repo_state.py` before pruning, deleting, or
    classifying git artifacts by hand.
 

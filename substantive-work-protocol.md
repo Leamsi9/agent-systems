@@ -50,7 +50,15 @@ use this protocol unless there is a very good reason not to.
 11. Proposal-only slices need only the durable artifacts that will still be
     useful after review. Use the proposal protocol to decide what survives,
     and keep temporary ledgers or inventories disposable by default.
-12. For implementation work, a final `ready for review`, `complete`, or
+12. Before changing an existing code surface, add or identify meaningful
+    passing behavioral tests for that surface and run them before the edit.
+    Re-run those tests after the edit and at the relevant phase gate before
+    proceeding.
+13. For greenfield code, use test-driven development: write a meaningful test
+    that fails for the missing behavior, add the implementation, then prove
+    the same test passes. Do not weaken the test to fit incomplete or buggy
+    code.
+14. For implementation work, a final `ready for review`, `complete`, or
     equivalent result requires a clean git checkpoint: `git status
     --porcelain --untracked-files=all` must be empty, `HEAD` must be ahead of
     the recorded baseline, and the final answer or completion record must
@@ -196,6 +204,12 @@ Checks prove that the phase landed. Examples:
 - file or route existence checks
 - content assertions in docs or config
 
+For phases that change code, checks should include both the pre-change
+behavioral baseline and the post-change validation for the surfaces being
+touched. Existing behavior needs passing regression coverage before the edit;
+greenfield behavior needs a failing test first and the same test passing after
+implementation.
+
 ### Negative Assertions
 
 Negative assertions prevent partial migration from being presented as complete.
@@ -225,13 +239,17 @@ For substantive work, follow this loop every time:
 7. Run the branch-setup gate before implementation work begins. A branch ref
    without a registered worktree is not a valid substantive work surface.
 8. Load only the current phase, the relevant code, and the required ledgers.
-9. Implement only the current phase.
-10. Run the phase checker against the current phase.
-11. Update required docs, optional completion logs, mirrors, and any published
+9. Add or identify the tests that define the current phase's code surfaces and
+   run them before editing. For greenfield code, confirm the new test fails for
+   the missing behavior.
+10. Implement only the current phase.
+11. Re-run the targeted tests after each meaningful edit slice.
+12. Run the phase checker against the current phase.
+13. Update required docs, optional completion logs, mirrors, and any published
    maps required by that phase.
-12. Re-run the phase checker.
-13. Advance only when the phase is green.
-14. Merge only after acceptance and final-green closure.
+14. Re-run the phase checker.
+15. Advance only when the phase is green.
+16. Merge only after acceptance and final-green closure.
 
 ## Repo-State Audit
 
