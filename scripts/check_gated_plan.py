@@ -120,6 +120,25 @@ def run_git(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
+def parse_git_worktree_porcelain(output: str) -> list[dict[str, str]]:
+    entries: list[dict[str, str]] = []
+    current: dict[str, str] = {}
+    for line in output.splitlines():
+        if not line:
+            if current:
+                entries.append(current)
+                current = {}
+            continue
+
+        key, _, value = line.partition(" ")
+        current[key] = value
+
+    if current:
+        entries.append(current)
+
+    return entries
+
+
 def resolve_repo_dir(root_dir: Path, raw_check: dict[str, Any]) -> Path:
     repo_value = str(raw_check.get("repo", "."))
     return resolve_check_path(root_dir, repo_value)
@@ -297,6 +316,59 @@ def run_check(
             else f"refs/heads/{branch} present"
         )
         return CheckResult(check_id, check_type, passed, detail)
+
+    if check_type == "git_branch_worktree":
+        repo_dir = resolve_repo_dir(root_dir, raw_check)
+        branch = str(raw_check.get("branch") or manifest_data.get("branch") or "").strip()
+        if not branch:
+            return CheckResult(check_id, check_type, False, "missing branch")
+        branch_ref = branch if branch.startswith("refs/") else f"refs/heads/{branch}"
+
+        completed = run_git(["worktree", "list", "--porcelain"], repo_dir)
+        if completed.returncode != 0:
+            detail = completed.stderr.strip() or f"git exited {completed.returncode}"
+            return CheckResult(check_id, check_type, False, detail)
+
+        match = next(
+            (
+                entry
+                for entry in parse_git_worktree_porcelain(completed.stdout)
+                if entry.get("branch") == branch_ref and entry.get("worktree")
+            ),
+            None,
+        )
+        if match is None:
+            return CheckResult(
+                check_id,
+                check_type,
+                False,
+                f"{branch_ref} has no registered worktree",
+            )
+
+        worktree = Path(match["worktree"]).resolve()
+        path_value = raw_check.get("path")
+        if path_value:
+            expected = resolve_check_path(root_dir, str(path_value)).resolve()
+            if worktree != expected:
+                return CheckResult(
+                    check_id,
+                    check_type,
+                    False,
+                    f"{branch_ref} registered at {worktree}, expected {expected}",
+                )
+
+        contains = str(raw_check.get("contains", "")).strip()
+        if contains:
+            contained_path = (worktree / contains).resolve()
+            if not contained_path.exists():
+                return CheckResult(
+                    check_id,
+                    check_type,
+                    False,
+                    f"{branch_ref} worktree lacks {contains}",
+                )
+
+        return CheckResult(check_id, check_type, True, f"{branch_ref} -> {worktree}")
 
     if check_type == "command":
         command = str(raw_check.get("command", "")).strip()

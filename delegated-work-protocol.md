@@ -24,6 +24,8 @@ a preflight report with:
 - host project directory and delegated container working directory
 - resolved git worktree root when available
 - current branch and commit when git metadata is available
+- for mutating substantive jobs, whether the current branch is registered in
+  `git worktree list --porcelain`, and the registered path
 - delegated protocol path supplied to the worker
 - selected work protocol path or a required worker selection step between
   `minor`, `substantive`, and `non_mutating`
@@ -52,7 +54,8 @@ provided to the worker and that the work protocol adoption step was required.
 Delegated jobs finish with one top-level quality state:
 
 - `passed`: preflight, worker execution, follow-ups, final git checkpoint, and
-  required verification all produced sufficient evidence
+  required verification all produced sufficient evidence, including a
+  registered branch/worktree binding for substantive repo-mutating work
 - `degraded_preflight`: the job ran after a non-fatal environment issue
 - `degraded_workers`: follow-up workers or resume launches failed
 - `degraded_verification`: required browser or mobile verification evidence is
@@ -80,3 +83,7 @@ inference:
   launch fails but the parent output remains usable
 - use `failed_gate` when the child failure invalidates the parent result or
   violates the adopted minor/substantive protocol
+
+If a delegated job adopts the substantive protocol and reports a branch as
+ready for review, runnable, or complete while that branch has no registered
+worktree, the parent job must treat the result as `failed_gate`.

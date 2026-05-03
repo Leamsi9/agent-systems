@@ -32,7 +32,9 @@ use this protocol unless there is a very good reason not to.
    uses another trunk branch, record that explicitly in the plan and the
    checks.
 3. Every substantive branch should have its own dedicated worktree. Do not
-   implement multiple active substantive streams in the same checkout.
+   implement multiple active substantive streams in the same checkout. Record
+   the branch/worktree binding in the plan manifest and prove it with
+   `git_branch_worktree` before treating the branch as runnable or ready.
 4. If the work spans repos, create a matching branch pair and keep each repo in
    its own worktree.
 5. Break the work into an ordered sequence of gated mini-plans instead of one
@@ -216,15 +218,18 @@ For substantive work, follow this loop every time:
 3. Create a dedicated worktree for the branch instead of implementing in the
    integration checkout.
 4. If the change spans repos, create a matching branch worktree in each repo.
-5. Create or refresh the durable plan and the `.plan.toml` manifest.
-6. Load only the current phase, the relevant code, and the required ledgers.
-7. Implement only the current phase.
-8. Run the phase checker against the current phase.
-9. Update required docs, optional completion logs, mirrors, and any published
+5. Create or refresh the durable plan and the `.plan.toml` manifest, including
+   a `git_branch_worktree` check for each implementation branch.
+6. Run the branch-setup gate before implementation work begins. A branch ref
+   without a registered worktree is not a valid substantive work surface.
+7. Load only the current phase, the relevant code, and the required ledgers.
+8. Implement only the current phase.
+9. Run the phase checker against the current phase.
+10. Update required docs, optional completion logs, mirrors, and any published
    maps required by that phase.
-10. Re-run the phase checker.
-11. Advance only when the phase is green.
-12. Merge only after acceptance and final-green closure.
+11. Re-run the phase checker.
+12. Advance only when the phase is green.
+13. Merge only after acceptance and final-green closure.
 
 ## Final Git Checkpoint
 
@@ -238,6 +243,8 @@ The final checkpoint requires:
   worktree
 - `HEAD` is ahead of the baseline branch or commit recorded in the plan and
   manifest
+- the branch is still bound to its registered implementation worktree when the
+  branch remains active for review, testing, or runtime selection
 - the final answer, job result, or completion log states `branch`, `commit`,
   `pushed: yes/no`, and `worktree_clean: true/false`
 
@@ -260,6 +267,11 @@ repo = "."
 [[phases.implementation.checks]]
 id = "head-ahead-of-baseline"
 type = "git_head_ahead"
+repo = "."
+
+[[phases.implementation.checks]]
+id = "branch-worktree-bound"
+type = "git_branch_worktree"
 repo = "."
 ```
 
@@ -432,6 +444,7 @@ Supported check types:
 - `git_merged_into`
 - `git_ref_equals`
 - `git_branch_absent`
+- `git_branch_worktree`
 - `worktree_absent`
 
 ## Branch Rule
@@ -447,6 +460,9 @@ This rule is mandatory for substantive work:
   remote integration branch
 - create a dedicated worktree for that branch instead of reusing a checkout
   that already mixes multiple streams
+- add a manifest `git_branch_worktree` check that names the branch, and add a
+  `path` or product-surface `contains` assertion when the branch must be
+  runnable by repo tooling
 - if the work spans repos, create a matching branch pair
 - keep a stable integration worktree available for bootstrap paths, pulls,
   merges, pushes, and reconciliation

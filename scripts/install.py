@@ -711,6 +711,7 @@ def scaffold(
             "docs/plans/cross-repo/sync",
             "docs/plans/cross-repo/archive",
             "docs/plans/cross-repo/proposals",
+            "docs/plans/cross-repo/proposals/pending",
         ]:
             (target / relative).mkdir(parents=True, exist_ok=True)
 

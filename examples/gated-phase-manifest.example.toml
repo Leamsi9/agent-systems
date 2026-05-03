@@ -27,6 +27,14 @@ id = "plans-index-exists"
 type = "path_exists"
 path = "docs/plans/plans-index.md"
 
+[[phases.branch_setup.checks]]
+id = "branch-worktree-bound"
+type = "git_branch_worktree"
+repo = "."
+branch = "feature/example-workstream"
+# Add `path = "/absolute/worktree/path"` when the exact checkout path matters.
+# Add `contains = "products/leam"` when runtime tooling needs that surface.
+
 [phases.implementation]
 summary = "Implement the active slice."
 depends_on = ["branch_setup"]
@@ -44,6 +52,11 @@ repo = "."
 [[phases.implementation.checks]]
 id = "head-ahead-of-baseline"
 type = "git_head_ahead"
+repo = "."
+
+[[phases.implementation.checks]]
+id = "branch-worktree-bound"
+type = "git_branch_worktree"
 repo = "."
 
 [[phases.implementation.checks]]
