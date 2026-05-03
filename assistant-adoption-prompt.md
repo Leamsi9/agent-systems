@@ -49,7 +49,14 @@ Requirements:
    - Files under `{{VENDOR_DIR}}/local/` are versioned by the consuming repo.
    - Package refreshes should preserve those files.
    - Generic protocol improvements should be upstreamed to the package root.
-8. If the change is substantive, follow `{{VENDOR_DIR}}/substantive-work-protocol.md`:
+8. Treat `{{VENDOR_DIR}}/skills/` as package-owned reusable assistant skills.
+   - If this repo has a native skill surface, project or copy package-owned
+     skills from `{{VENDOR_DIR}}/skills/` instead of editing a separate fork.
+   - Keep product-specific or repo-specific skills outside the package.
+   - For git/worktree cleanup, prefer
+     `python3 {{VENDOR_DIR}}/scripts/repo_state.py --repo . --json` before
+     manual pruning or branch deletion.
+9. If the change is substantive, follow `{{VENDOR_DIR}}/substantive-work-protocol.md`:
    create the smallest durable plan family that proves the work, keep phases
    gated, and do not claim completion without the checker passing.
    - If the work is local to this repo, place the plan in the default
@@ -68,12 +75,13 @@ Requirements:
      the workstream has a clear center, for example
      `feature/<feature-slug>/<slice>-YYYY-MM-DD` and
      `docs/temp/<feature-slug>/<topic>-YYYY-MM-DD.md`.
-9. Run the narrowest validation needed for the repo plus the package checks that
+10. Run the narrowest validation needed for the repo plus the package checks that
    apply:
    - `python3 {{VENDOR_DIR}}/scripts/check_gated_plan.py ...`
+   - `python3 {{VENDOR_DIR}}/scripts/repo_state.py --repo . --json`
    - `python3 {{VENDOR_DIR}}/scripts/workstream.py sync-index --confirm`
-   - `python3 -m py_compile {{VENDOR_DIR}}/scripts/check_gated_plan.py {{VENDOR_DIR}}/scripts/workstream.py {{VENDOR_DIR}}/scripts/install.py`
-10. Summarize:
+   - `python3 -m py_compile {{VENDOR_DIR}}/scripts/check_gated_plan.py {{VENDOR_DIR}}/scripts/workstream.py {{VENDOR_DIR}}/scripts/repo_state.py {{VENDOR_DIR}}/scripts/install.py`
+11. Summarize:
    - what changed
    - what was verified
    - whether the plan placement is local or `cross-repo`

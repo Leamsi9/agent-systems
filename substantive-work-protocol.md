@@ -218,18 +218,42 @@ For substantive work, follow this loop every time:
 3. Create a dedicated worktree for the branch instead of implementing in the
    integration checkout.
 4. If the change spans repos, create a matching branch worktree in each repo.
-5. Create or refresh the durable plan and the `.plan.toml` manifest, including
+5. Run a repo-state audit in the implementation worktree when
+   `agent-protocols/scripts/repo_state.py` is available.
+6. Create or refresh the durable plan and the `.plan.toml` manifest, including
    a `git_branch_worktree` check for each implementation branch.
-6. Run the branch-setup gate before implementation work begins. A branch ref
+7. Run the branch-setup gate before implementation work begins. A branch ref
    without a registered worktree is not a valid substantive work surface.
-7. Load only the current phase, the relevant code, and the required ledgers.
-8. Implement only the current phase.
-9. Run the phase checker against the current phase.
-10. Update required docs, optional completion logs, mirrors, and any published
+8. Load only the current phase, the relevant code, and the required ledgers.
+9. Implement only the current phase.
+10. Run the phase checker against the current phase.
+11. Update required docs, optional completion logs, mirrors, and any published
    maps required by that phase.
-11. Re-run the phase checker.
-12. Advance only when the phase is green.
-13. Merge only after acceptance and final-green closure.
+12. Re-run the phase checker.
+13. Advance only when the phase is green.
+14. Merge only after acceptance and final-green closure.
+
+## Repo-State Audit
+
+When `agent-protocols/scripts/repo_state.py` is available, use it as the first
+git-state classifier before making branch, worktree, pruning, deletion, or
+cleanup decisions:
+
+```bash
+python3 agent-protocols/scripts/repo_state.py --repo . --json
+```
+
+"First" means after reading the applicable repo instructions and identifying
+the work scope, but before manual `git worktree prune`, branch deletion,
+checkout-directory deletion, or cleanup classification.
+
+Use `--apply-safe-cleanup` only after a plain audit has shown deterministic safe
+actions and cleanup is in scope. It must not be used to resolve dirty
+worktrees, unmerged branches, ahead branches, active review branches, secrets,
+migrations, production state, or any ambiguous path.
+
+Run a second plain audit before closeout when the phase changes branch or
+worktree state, or when the work includes cleanup.
 
 ## Final Git Checkpoint
 

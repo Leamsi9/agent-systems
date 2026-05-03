@@ -142,6 +142,10 @@ different repo.
 - `local/README.md`
   Package-source marker for the consumer-owned local protocol overlay. Consumer
   files under `agent-protocols/local/` are not package-owned.
+- `skills/git-cleanup/SKILL.md`
+  Optional assistant skill for independent git/worktree cleanup triage. It is
+  package-owned so consumers can project it into Codex, Claude, Ironclaw, or
+  another local skill surface without hand-copying the guidance.
 - `examples/gated-phase-manifest.example.toml`
   Reusable example manifest for gated mini-plans.
 - `scripts/check_gated_plan.py`
@@ -155,10 +159,14 @@ different repo.
 - `scripts/workstream.py`
   Canonical live-workstream audit, clean-git reconciliation, and status-ledger
   sync script.
+- `scripts/repo_state.py`
+  Low-level branch/worktree/orphan checkout classifier with deterministic safe
+  cleanup for stale registrations and redundant checkout directories.
 
 When an operator asks to "clean git", use the reconciliation inventory first
 instead of pruning branches blindly:
 
+- `python3 agent-protocols/scripts/repo_state.py --repo . --json`
 - `python3 agent-protocols/scripts/workstream.py reconcile --json`
 - `scripts/install.py`
   Bootstrap installer that vendors the package and scaffolds repo-local config
@@ -170,6 +178,7 @@ The public package repo ships a small example `docs/` skeleton so you can
 validate the package in isolation:
 
 - `python3 scripts/check_gated_plan.py docs/plans/feature/example-workstream.plan.toml --phase acceptance`
+- `python3 scripts/repo_state.py --repo . --json`
 - `python3 scripts/workstream.py reconcile --json`
 - `python3 scripts/workstream.py sync-index --confirm`
 
@@ -215,6 +224,7 @@ To vendor this package into another repo:
    refreshes preserve that directory and do not treat it as upstream content.
 8. Run the canonical scripts directly:
    - `python3 agent-protocols/scripts/check_gated_plan.py path/to/work.plan.toml --phase phase_name`
+   - `python3 agent-protocols/scripts/repo_state.py --repo . --json`
    - `python3 agent-protocols/scripts/workstream.py reconcile --json`
    - `python3 agent-protocols/scripts/workstream.py sync-index --confirm`
    - `python3 agent-protocols/scripts/install.py`

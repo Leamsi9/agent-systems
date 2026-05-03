@@ -15,6 +15,11 @@ Recommended flow:
 4. update consumers by copying a tagged release, pulling a subtree update, or
    rerunning `scripts/install.py` from an updated external checkout
 
+The installer vendors the package-owned protocols, examples, scripts, and
+skills. Consumer-owned skill projections outside `agent-protocols/` should be
+generated or copied from the vendored package rather than edited as independent
+forks.
+
 The package is intentionally staying on `0.0.x` until the config contract and
 Leam adoption are proven stable.
 
@@ -62,6 +67,10 @@ Each consumer should document:
 
 Keep reusable protocol content in the package. Keep repo-specific landing
 pages, ledgers, ADRs, and any proposal logs in the consuming repo.
+
+Package-owned reusable skills live under `agent-protocols/skills/`. Product or
+repo-specific skills can live in the consuming repo's native skill surface, but
+generic skill improvements should come back to the package first.
 
 ## Upstream First For Generic Changes
 

@@ -55,6 +55,9 @@ It does not replace:
 7. Any final `ready for review`, `complete`, `passed`, or equivalent result
    requires a clean git checkpoint. A dirty worktree at final response time is
    a failed gate, not a degraded completion.
+8. If the work involves branch/worktree cleanup or ambiguous git state, run
+   `agent-protocols/scripts/repo_state.py` before pruning, deleting, or
+   classifying git artifacts by hand.
 
 ## Lightweight Decision Log
 
@@ -126,6 +129,25 @@ Closeout for minor work is:
 
 A decision-log entry is not a substitute for substantive completion evidence.
 It is a lightweight historical breadcrumb, not a gate.
+
+## Repo-State Audit
+
+For ordinary clean minor edits, `git status --short --branch` may be enough.
+When the task mentions stale worktrees, orphan directories, dirty branches,
+shadowed checkouts, cleanup, or ambiguous git state, run:
+
+```bash
+python3 agent-protocols/scripts/repo_state.py --repo . --json
+```
+
+Run it after reading the repo instructions and identifying scope, but before
+manual pruning, branch deletion, checkout-directory deletion, or cleanup
+classification.
+
+Use `--apply-safe-cleanup` only after the plain audit has identified
+deterministic safe actions and cleanup is within the requested scope. Do not
+use safe cleanup on dirty, unmerged, ahead, active, security-sensitive, or
+otherwise ambiguous state.
 
 ## Final Git Checkpoint
 

@@ -26,6 +26,8 @@ a preflight report with:
 - current branch and commit when git metadata is available
 - for mutating substantive jobs, whether the current branch is registered in
   `git worktree list --porcelain`, and the registered path
+- repo-state audit availability and output summary when
+  `agent-protocols/scripts/repo_state.py` is present
 - delegated protocol path supplied to the worker
 - selected work protocol path or a required worker selection step between
   `minor`, `substantive`, and `non_mutating`
@@ -34,6 +36,10 @@ a preflight report with:
 - expected developer tools, starting with `git` and `rg`
 - whether browser or mobile verification is required by the task
 - whether the job may start cleanly, start degraded, or fail before execution
+
+The repo-state audit is a classifier, not a cleanup command. Delegated runtimes
+or workers may apply safe cleanup only when cleanup is explicitly in scope and
+the adopted minor or substantive protocol permits it.
 
 The preflight report is runtime evidence. Prompt text may point workers at this
 protocol, but prompt text is not the enforcement mechanism.

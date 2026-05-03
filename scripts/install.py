@@ -35,6 +35,7 @@ OPTIONAL_VENDORED_FILES = [
 VENDORED_DIRS = [
     "examples",
     "scripts",
+    "skills",
 ]
 
 
@@ -674,7 +675,7 @@ path = "docs/plans/cross-repo/README.md"
 [[phases.acceptance.checks]]
 id = "scripts-compile"
 type = "command"
-command = "python3 -m py_compile agent-protocols/scripts/check_gated_plan.py agent-protocols/scripts/workstream.py"
+command = "python3 -m py_compile agent-protocols/scripts/check_gated_plan.py agent-protocols/scripts/workstream.py agent-protocols/scripts/repo_state.py"
 """
 
 

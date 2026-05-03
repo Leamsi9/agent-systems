@@ -47,6 +47,7 @@ surfaces, not required companions for every proposal.
 - [Minor work protocol package sync, 2026-04-29](sync/2026-04-29-minor-work-protocol-package-sync.md)
 - [Closeout git gate package sync, 2026-05-02](sync/2026-05-02-closeout-git-gate-package-sync.md)
 - [Protocol quality gate unification, 2026-05-02](sync/2026-05-02-protocol-quality-gate-unification.md)
+- [Git cleanup skill package sync, 2026-05-03](sync/2026-05-03-git-cleanup-skill-package-sync.md)
 
 ### `hotfix/`
 

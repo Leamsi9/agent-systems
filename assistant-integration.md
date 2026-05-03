@@ -18,8 +18,13 @@ Recommended approach:
    outside the vendored package
 6. keep temporary working markdown under `docs/temp/` and follow
    `agent-protocols/temp-doc-protocol.md`
+7. treat `agent-protocols/skills/` as package-owned reusable assistant skills
+   that may be projected into local Codex, Claude, Ironclaw, or repo-specific
+   skill surfaces
 
 Do not fork the protocol docs into separate copies for each assistant.
+Do not hand-edit generated skill projections as independent source; update the
+package-owned skill first, then refresh the projection.
 
 ## Minimal Entry Points
 
@@ -40,6 +45,7 @@ Use a short pointer such as:
 For substantive work, follow `agent-protocols/substantive-work-protocol.md`.
 Use `docs/temp/` for temporary working docs per `agent-protocols/temp-doc-protocol.md`.
 Repo topology and linked repos are declared in `agent-protocols.toml`.
+For git/worktree cleanup, prefer `agent-protocols/scripts/repo_state.py` before manual pruning.
 ```
 
 ## Bootstrap Help
